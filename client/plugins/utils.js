@@ -18,6 +18,17 @@ Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
+Vue.prototype.$bitratePretty = (bitrate, decimals = 1) => {
+  if (isNaN(bitrate) || bitrate == 0) {
+    return '0'
+  }
+  const k = 1000
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ['', 'k', 'm']
+  const i = Math.floor(Math.log(bitrate) / Math.log(k))
+  return parseFloat((bitrate / Math.pow(k, i)).toFixed(dm)) + sizes[i]
+}
+
 Vue.prototype.$elapsedPretty = (seconds, useFullNames = false) => {
   if (seconds < 60) {
     return `${Math.floor(seconds)} sec${useFullNames ? 'onds' : ''}`
