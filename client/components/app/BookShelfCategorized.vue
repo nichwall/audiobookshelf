@@ -1,29 +1,41 @@
 <template>
-  <div id="bookshelf" ref="wrapper" class="w-full max-w-full h-full overflow-y-scroll relative" :style="{ fontSize: sizeMultiplier + 'rem' }">
+  <div id="bookshelf" ref="wrapper" class="w-full max-w-full h-full overflow-y-scroll relative">
     <!-- Cover size widget -->
     <widgets-cover-size-widget class="fixed right-4 z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
 
     <div v-if="loaded && !shelves.length && !search" class="w-full flex flex-col items-center justify-center py-12">
-      <p class="text-center text-2xl mb-4 py-4">{{ $getString('MessageXLibraryIsEmpty', [libraryName]) }}</p>
+      <p class="text-center text-2xl mb-4 py-4">{{ libraryName }} Library is empty!</p>
       <div v-if="userIsAdminOrUp" class="flex">
-        <ui-btn to="/config" color="primary" class="w-52 mr-2">{{ $strings.ButtonConfigureScanner }}</ui-btn>
-        <ui-btn color="success" class="w-52" :loading="isScanningLibrary || tempIsScanning" @click="scan">{{ $strings.ButtonScanLibrary }}</ui-btn>
+        <ui-btn to="/config" color="primary" class="w-52 mr-2">Configure Scanner</ui-btn>
+        <ui-btn color="success" class="w-52" @click="scan">Scan Library</ui-btn>
       </div>
     </div>
     <div v-else-if="loaded && !shelves.length && search" class="w-full h-40 flex items-center justify-center">
-      <p class="text-center text-xl py-4">{{ $strings.MessageBookshelfNoResultsForQuery }}</p>
+      <p class="text-center text-xl py-4">No results for query</p>
     </div>
     <!-- Alternate plain view -->
-    <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24e">
-      <template v-for="(shelf, index) in supportedShelves">
-        <widgets-item-slider :shelf-id="shelf.id" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" :type="shelf.type" class="bookshelf-row pl-8e my-6e" @selectEntity="(payload) => selectEntity(payload, index)">
-          <p class="font-semibold text-gray-100">{{ $strings[shelf.labelStringKey] }}</p>
+    <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24">
+      <template v-for="(shelf, index) in shelves">
+        <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :shelf-id="shelf.id" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-item-slider>
+        <widgets-episode-slider v-else-if="shelf.type === 'episode'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
+        </widgets-episode-slider>
+        <widgets-series-slider v-else-if="shelf.type === 'series'" :key="index + '.'" :items="shelf.entities" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
+        </widgets-series-slider>
+        <widgets-authors-slider v-else-if="shelf.type === 'authors'" :key="index + '.'" :items="shelf.entities" :height="192 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
+        </widgets-authors-slider>
+        <widgets-narrators-slider v-else-if="shelf.type === 'narrators'" :key="index + '.'" :items="shelf.entities" :height="100 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
+        </widgets-narrators-slider>
       </template>
     </div>
     <!-- Regular bookshelf view -->
     <div v-else class="w-full">
-      <template v-for="(shelf, index) in supportedShelves">
+      <template v-for="(shelf, index) in shelves">
         <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" @selectEntity="(payload) => selectEntity(payload, index)" />
       </template>
     </div>
@@ -46,14 +58,10 @@ export default {
       scannerParseSubtitle: false,
       wrapperClientWidth: 0,
       shelves: [],
-      lastItemIndexSelected: -1,
-      tempIsScanning: false
+      lastItemIndexSelected: -1
     }
   },
   computed: {
-    supportedShelves() {
-      return this.shelves.filter((shelf) => ['book', 'podcast', 'episode', 'series', 'authors', 'narrators'].includes(shelf.type))
-    },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
@@ -81,16 +89,14 @@ export default {
       return this.coverAspectRatio == 1
     },
     sizeMultiplier() {
-      return this.$store.getters['user/getSizeMultiplier']
+      var baseSize = this.isCoverSquareAspectRatio ? 192 : 120
+      return this.bookCoverWidth / baseSize
     },
     selectedMediaItems() {
       return this.$store.state.globals.selectedMediaItems || []
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
-    },
-    isScanningLibrary() {
-      return !!this.$store.getters['tasks/getRunningLibraryScanTask'](this.currentLibraryId)
     }
   },
   methods: {
@@ -267,15 +273,14 @@ export default {
       this.shelves = shelves
     },
     scan() {
-      this.tempIsScanning = true
       this.$store
         .dispatch('libraries/requestLibraryScan', { libraryId: this.$store.state.libraries.currentLibraryId })
+        .then(() => {
+          this.$toast.success('Library scan started')
+        })
         .catch((error) => {
           console.error('Failed to start scan', error)
-          this.$toast.error(this.$strings.ToastLibraryScanFailedToStart)
-        })
-        .finally(() => {
-          this.tempIsScanning = false
+          this.$toast.error('Failed to start scan')
         })
     },
     userUpdated(user) {

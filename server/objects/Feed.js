@@ -84,24 +84,6 @@ class Feed {
     return episode.fullPath
   }
 
-  /**
-   * If chapters for an audiobook match the audio tracks then use chapter titles instead of audio file names
-   * 
-   * @param {import('../objects/LibraryItem')} libraryItem 
-   * @returns {boolean}
-   */
-  checkUseChapterTitlesForEpisodes(libraryItem) {
-    const tracks = libraryItem.media.tracks
-    const chapters = libraryItem.media.chapters
-    if (tracks.length !== chapters.length) return false
-    for (let i = 0; i < tracks.length; i++) {
-      if (Math.abs(chapters[i].start - tracks[i].startOffset) >= 1) {
-        return false
-      }
-    }
-    return true
-  }
-
   setFromItem(userId, slug, libraryItem, serverAddress, preventIndexing = true, ownerName = null, ownerEmail = null) {
     const media = libraryItem.media
     const mediaMetadata = media.metadata
@@ -146,10 +128,9 @@ class Feed {
         this.episodes.push(feedEpisode)
       })
     } else { // AUDIOBOOK EPISODES
-      const useChapterTitles = this.checkUseChapterTitlesForEpisodes(libraryItem)
       media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
-        feedEpisode.setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, this.meta, useChapterTitles)
+        feedEpisode.setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, this.meta)
         this.episodes.push(feedEpisode)
       })
     }
@@ -187,10 +168,9 @@ class Feed {
         this.episodes.push(feedEpisode)
       })
     } else { // AUDIOBOOK EPISODES
-      const useChapterTitles = this.checkUseChapterTitlesForEpisodes(libraryItem)
       media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
-        feedEpisode.setFromAudiobookTrack(libraryItem, this.serverAddress, this.slug, audioTrack, this.meta, useChapterTitles)
+        feedEpisode.setFromAudiobookTrack(libraryItem, this.serverAddress, this.slug, audioTrack, this.meta)
         this.episodes.push(feedEpisode)
       })
     }
@@ -234,10 +214,9 @@ class Feed {
     itemsWithTracks.forEach((item, index) => {
       if (item.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = item.updatedAt
 
-      const useChapterTitles = this.checkUseChapterTitlesForEpisodes(item)
       item.media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
-        feedEpisode.setFromAudiobookTrack(item, serverAddress, slug, audioTrack, this.meta, useChapterTitles, index)
+        feedEpisode.setFromAudiobookTrack(item, serverAddress, slug, audioTrack, this.meta, index)
         this.episodes.push(feedEpisode)
       })
     })
@@ -266,10 +245,9 @@ class Feed {
     itemsWithTracks.forEach((item, index) => {
       if (item.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = item.updatedAt
 
-      const useChapterTitles = this.checkUseChapterTitlesForEpisodes(item)
       item.media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
-        feedEpisode.setFromAudiobookTrack(item, this.serverAddress, this.slug, audioTrack, this.meta, useChapterTitles, index)
+        feedEpisode.setFromAudiobookTrack(item, this.serverAddress, this.slug, audioTrack, this.meta, index)
         this.episodes.push(feedEpisode)
       })
     })
@@ -317,10 +295,9 @@ class Feed {
     itemsWithTracks.forEach((item, index) => {
       if (item.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = item.updatedAt
 
-      const useChapterTitles = this.checkUseChapterTitlesForEpisodes(item)
       item.media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
-        feedEpisode.setFromAudiobookTrack(item, serverAddress, slug, audioTrack, this.meta, useChapterTitles, index)
+        feedEpisode.setFromAudiobookTrack(item, serverAddress, slug, audioTrack, this.meta, index)
         this.episodes.push(feedEpisode)
       })
     })
@@ -352,10 +329,9 @@ class Feed {
     itemsWithTracks.forEach((item, index) => {
       if (item.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = item.updatedAt
 
-      const useChapterTitles = this.checkUseChapterTitlesForEpisodes(item)
       item.media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
-        feedEpisode.setFromAudiobookTrack(item, this.serverAddress, this.slug, audioTrack, this.meta, useChapterTitles, index)
+        feedEpisode.setFromAudiobookTrack(item, this.serverAddress, this.slug, audioTrack, this.meta, index)
         this.episodes.push(feedEpisode)
       })
     })

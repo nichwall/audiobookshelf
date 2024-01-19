@@ -1,13 +1,12 @@
-const Logger = require('../Logger')
+const Logger = require("../Logger")
 const BookFinder = require('../finders/BookFinder')
 const PodcastFinder = require('../finders/PodcastFinder')
 const AuthorFinder = require('../finders/AuthorFinder')
 const MusicFinder = require('../finders/MusicFinder')
-const Database = require('../Database')
-const { isValidASIN } = require('../utils')
+const Database = require("../Database")
 
 class SearchController {
-  constructor() {}
+  constructor() { }
 
   async findBooks(req, res) {
     const id = req.query.id
@@ -38,21 +37,18 @@ class SearchController {
 
   /**
    * Find podcast RSS feeds given a term
-   *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async findPodcasts(req, res) {
     const term = req.query.term
-    const country = req.query.country || 'us'
     if (!term) {
       Logger.error('[SearchController] Invalid request query param "term" is required')
       return res.status(400).send('Invalid request query param "term" is required')
     }
 
-    const results = await PodcastFinder.search(term, {
-      country
-    })
+    const results = await PodcastFinder.search(term)
     res.json(results)
   }
 
@@ -64,9 +60,6 @@ class SearchController {
 
   async findChapters(req, res) {
     const asin = req.query.asin
-    if (!isValidASIN(asin.toUpperCase())) {
-      return res.json({ error: 'Invalid ASIN' })
-    }
     const region = (req.query.region || 'us').toLowerCase()
     const chapterData = await BookFinder.findChapters(asin, region)
     if (!chapterData) {

@@ -46,8 +46,7 @@ export default {
         font: 'serif',
         fontScale: 100,
         lineSpacing: 115,
-        spread: 'auto',
-        textStroke: 0
+        spread: 'auto'
       }
     }
   },
@@ -63,9 +62,6 @@ export default {
     /** @returns {string} */
     libraryItemId() {
       return this.libraryItem?.id
-    },
-    allowScriptedContent() {
-      return this.$store.getters['libraries/getLibraryEpubsAllowScriptedContent']
     },
     hasPrev() {
       return !this.rendition?.location?.atStart
@@ -110,14 +106,11 @@ export default {
 
       const fontScale = this.ereaderSettings.fontScale / 100
 
-      const textStroke = this.ereaderSettings.textStroke / 100
-
       return {
         '*': {
           color: `${fontColor}!important`,
           'background-color': `${backgroundColor}!important`,
-          'line-height': lineSpacing * fontScale + 'rem!important',
-          '-webkit-text-stroke': textStroke + 'px ' + fontColor + '!important'
+          'line-height': lineSpacing * fontScale + 'rem!important'
         },
         a: {
           color: `${fontColor}!important`
@@ -199,7 +192,7 @@ export default {
      */
     updateProgress(payload) {
       if (!this.keepProgress) return
-      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload, { progress: false }).catch((error) => {
+      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload).catch((error) => {
         console.error('EpubReader.updateProgress failed:', error)
       })
     },
@@ -323,7 +316,6 @@ export default {
       reader.rendition = reader.book.renderTo('viewer', {
         width: this.readerWidth,
         height: this.readerHeight * 0.8,
-        allowScriptedContent: this.allowScriptedContent,
         spread: 'auto',
         snap: true,
         manager: 'continuous',

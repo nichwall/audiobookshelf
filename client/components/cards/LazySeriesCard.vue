@@ -1,32 +1,28 @@
 <template>
-  <div cy-id="card" ref="card" :id="`series-card-${index}`" :style="{ width: cardWidth + 'px' }" class="absolute rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
-    <div cy-id="covers-area" class="relative" :style="{ height: coverHeight + 'px' }">
-      <div class="absolute top-0 left-0 w-full box-shadow-book shadow-height" />
-      <div class="w-full h-full bg-primary relative rounded overflow-hidden z-0">
-        <covers-group-cover v-if="series" ref="cover" :id="seriesId" :name="displayTitle" :book-items="books" :width="cardWidth" :height="coverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" />
-      </div>
-
-      <div cy-id="seriesLengthMarker" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `0.1em 0.25em` }" style="background-color: #cd9d49dd">
-        <p :style="{ fontSize: 0.8 + 'em' }">{{ books.length }}</p>
-      </div>
-
-      <div cy-id="seriesProgressBar" v-if="seriesPercentInProgress > 0" class="absolute bottom-0 left-0 h-1e shadow-sm max-w-full z-10 rounded-b w-full" :class="isSeriesFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: seriesPercentInProgress * 100 + '%' }" />
-
-      <div cy-id="hoveringDisplayTitle" v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: '1em' }">
-        <p :style="{ fontSize: 1.2 + 'em' }">{{ displayTitle }}</p>
-      </div>
-
-      <span cy-id="rssFeedMarker" v-if="!isHovering && rssFeed" class="absolute z-10 material-icons text-success" :style="{ top: 0.5 + 'em', left: 0.5 + 'em', fontSize: 1.5 + 'em' }">rss_feed</span>
+  <div ref="card" :id="`series-card-${index}`" :style="{ width: width + 'px', height: height + 'px' }" class="rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+    <div class="absolute top-0 left-0 w-full box-shadow-book shadow-height" />
+    <div class="w-full h-full bg-primary relative rounded overflow-hidden z-0">
+      <covers-group-cover v-if="series" ref="cover" :id="seriesId" :name="displayTitle" :book-items="books" :width="width" :height="height" :book-cover-aspect-ratio="bookCoverAspectRatio" />
     </div>
 
-    <div cy-id="standardBottomText" v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-10 left-0 right-0 mx-auto -bottom-6e h-6e rounded-md text-center" :style="{ width: Math.min(200, cardWidth) + 'px' }">
-      <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0em 0.5em` }">
-        <p cy-id="standardBottomDisplayTitle" class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ displayTitle }}</p>
+    <div class="absolute z-10 top-1.5 right-1.5 rounded-md leading-3 text-sm p-1 font-semibold text-white flex items-center justify-center" style="background-color: #cd9d49dd">{{ books.length }}</div>
+
+    <div v-if="seriesPercentInProgress > 0" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b w-full" :class="isSeriesFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: seriesPercentInProgress * 100 + '%' }" />
+
+    <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
+      <p :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">{{ displayTitle }}</p>
+    </div>
+
+    <span v-if="!isHovering && rssFeed" class="absolute z-10 material-icons text-success" :style="{ top: 0.5 * sizeMultiplier + 'rem', left: 0.5 * sizeMultiplier + 'rem', fontSize: 1.5 * sizeMultiplier + 'rem' }">rss_feed</span>
+
+    <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-10 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md text-center" :style="{ width: Math.min(200, width) + 'px' }">
+      <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0rem ${0.5 * sizeMultiplier}rem` }">
+        <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ displayTitle }}</p>
       </div>
     </div>
-    <div cy-id="detailBottomText" v-else class="relative z-30 left-0 right-0 mx-auto py-1e rounded-md text-center">
-      <p cy-id="detailBottomDisplayTitle" class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ displayTitle }}</p>
-      <p cy-id="detailBottomSortLine" v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ displaySortLine }}</p>
+    <div v-else class="absolute z-30 left-0 right-0 mx-auto -bottom-8 h-8 py-1 rounded-md text-center">
+      <p class="truncate" :style="{ fontSize: labelFontSize * sizeMultiplier + 'rem' }">{{ displayTitle }}</p>
+      <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
     </div>
   </div>
 </template>
@@ -36,14 +32,13 @@ export default {
   props: {
     index: Number,
     width: Number,
-    height: {
-      type: Number,
-      default: 192
-    },
+    height: Number,
+    bookCoverAspectRatio: Number,
     bookshelfView: {
       type: Number,
       default: 0
     },
+    isCategorized: Boolean,
     seriesMount: {
       type: Object,
       default: () => null
@@ -61,24 +56,16 @@ export default {
     }
   },
   computed: {
-    bookCoverAspectRatio() {
-      return this.store.getters['libraries/getBookCoverAspectRatio']
-    },
-    cardWidth() {
-      return this.width || this.coverHeight * 2
-    },
-    coverHeight() {
-      return this.height * this.sizeMultiplier
-    },
     dateFormat() {
       return this.store.state.serverSettings.dateFormat
     },
     labelFontSize() {
       if (this.width < 160) return 0.75
-      return 0.9
+      return 0.875
     },
     sizeMultiplier() {
-      return this.store.getters['user/getSizeMultiplier']
+      if (this.bookCoverAspectRatio === 1) return this.width / (120 * 1.6 * 2)
+      return this.width / 240
     },
     seriesId() {
       return this.series ? this.series.id : ''
@@ -91,7 +78,7 @@ export default {
     },
     displayTitle() {
       if (this.sortingIgnorePrefix) return this.nameIgnorePrefix || this.title
-      return this.title || '\u00A0'
+      return this.title
     },
     displaySortLine() {
       switch (this.orderBy) {
@@ -132,13 +119,9 @@ export default {
       return this.seriesBookProgress.some((p) => !p.isFinished && p.progress > 0)
     },
     seriesPercentInProgress() {
-      if (!this.books.length) return 0
-      let progressPercent = 0
-      this.seriesBookProgress.forEach((progress) => {
-        progressPercent += progress.isFinished ? 1 : progress.progress || 0
-      })
-      progressPercent /= this.books.length
-      return Math.min(1, Math.max(0, progressPercent))
+      let totalFinishedAndInProgress = this.seriesBooksFinished.length
+      if (this.hasSeriesBookInProgress) totalFinishedAndInProgress += 1
+      return Math.min(1, Math.max(0, totalFinishedAndInProgress / this.books.length))
     },
     isSeriesFinished() {
       return this.books.length === this.seriesBooksFinished.length

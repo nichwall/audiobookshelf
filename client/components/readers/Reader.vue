@@ -98,12 +98,6 @@
           </div>
           <ui-range-input v-model="ereaderSettings.lineSpacing" :min="100" :max="300" :step="5" @input="settingsUpdated" />
         </div>
-        <div class="flex items-center mb-4">
-          <div class="w-40">
-            <p class="text-lg">{{ $strings.LabelFontBoldness }}:</p>
-          </div>
-          <ui-range-input v-model="ereaderSettings.textStroke" :min="0" :max="300" :step="5" @input="settingsUpdated" />
-        </div>
         <div class="flex items-center">
           <div class="w-40">
             <p class="text-lg">{{ $strings.LabelLayout }}:</p>
@@ -136,9 +130,7 @@ export default {
         font: 'serif',
         fontScale: 100,
         lineSpacing: 115,
-        fontBoldness: 100,
-        spread: 'auto',
-        textStroke: 0
+        spread: 'auto'
       }
     }
   },
@@ -386,12 +378,7 @@ export default {
       try {
         const settings = localStorage.getItem('ereaderSettings')
         if (settings) {
-          const _ereaderSettings = JSON.parse(settings)
-          for (const key in this.ereaderSettings) {
-            if (_ereaderSettings[key] !== undefined) {
-              this.ereaderSettings[key] = _ereaderSettings[key]
-            }
-          }
+          this.ereaderSettings = JSON.parse(settings)
           this.settingsUpdated()
         }
       } catch (error) {

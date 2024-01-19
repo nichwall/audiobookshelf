@@ -137,6 +137,9 @@ export default {
       })
       return count
     },
+    missingParts() {
+      return this.media.missingParts || []
+    },
     libraryItemId() {
       return this.libraryItem.id
     },

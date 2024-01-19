@@ -101,13 +101,8 @@ export default {
     },
     fullCoverUrl() {
       if (!this.libraryItem) return null
-      const store = this.$store || this.$nuxt.$store
+      var store = this.$store || this.$nuxt.$store
       return store.getters['globals/getLibraryItemCoverSrc'](this.libraryItem, this.placeholderUrl)
-    },
-    rawCoverUrl() {
-      if (!this.libraryItem) return null
-      const store = this.$store || this.$nuxt.$store
-      return store.getters['globals/getLibraryItemCoverSrc'](this.libraryItem, this.placeholderUrl, true)
     },
     cover() {
       return this.media.coverPath || this.placeholderUrl
@@ -131,6 +126,9 @@ export default {
     authorBottom() {
       return 0.75 * this.sizeMultiplier
     },
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
     resolution() {
       return `${this.naturalWidth}x${this.naturalHeight}px`
     }
@@ -138,7 +136,7 @@ export default {
   methods: {
     clickCover() {
       if (this.expandOnClick && this.libraryItem) {
-        this.$store.commit('globals/setRawCoverPreviewModal', this.rawCoverUrl)
+        this.$store.commit('globals/setRawCoverPreviewModal', this.libraryItem.id)
       }
     },
     setCoverBg() {

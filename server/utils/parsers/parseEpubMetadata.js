@@ -18,10 +18,7 @@ async function extractFileFromEpub(epubPath, filepath) {
     Logger.error(`[parseEpubMetadata] Failed to extract ${filepath} from epub at "${epubPath}"`, error)
   })
   const filedata = data?.toString('utf8')
-  await zip.close().catch((error) => {
-    Logger.error(`[parseEpubMetadata] Failed to close zip`, error)
-  })
-
+  await zip.close()
   return filedata
 }
 
@@ -71,9 +68,6 @@ async function parse(ebookFile) {
   Logger.debug(`Parsing metadata from epub at "${epubPath}"`)
   // Entrypoint of the epub that contains the filepath to the package document (opf file)
   const containerJson = await extractXmlToJson(epubPath, 'META-INF/container.xml')
-  if (!containerJson) {
-    return null
-  }
 
   // Get package document opf filepath from container.xml
   const packageDocPath = containerJson.container?.rootfiles?.[0]?.rootfile?.[0]?.$?.['full-path']

@@ -2,13 +2,13 @@
   <div :id="`lazy-episode-${index}`" class="w-full h-full cursor-pointer" @mouseover="mouseover" @mouseleave="mouseleave">
     <div class="flex" @click="clickedEpisode">
       <div class="flex-grow">
-        <div dir="auto" class="flex items-center">
+        <div class="flex items-center">
           <span class="text-sm font-semibold">{{ episodeTitle }}</span>
           <widgets-podcast-type-indicator :type="episodeType" />
         </div>
 
-        <div class="h-10 flex items-center mt-1.5 mb-0.5 overflow-hidden">
-          <p class="text-sm text-gray-200 line-clamp-2" v-html="episodeSubtitle"></p>
+        <div class="h-10 flex items-center mt-1.5 mb-0.5">
+          <p class="text-sm text-gray-200 episode-subtitle" v-html="episodeSubtitle"></p>
         </div>
         <div class="h-8 flex items-center">
           <div class="w-full inline-flex justify-between max-w-xl">

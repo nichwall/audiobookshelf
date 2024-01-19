@@ -34,10 +34,6 @@ module.exports = {
             attributes: ['sequence']
           }
         }
-      ],
-      order: [
-        [Database.authorModel, Database.bookAuthorModel, 'createdAt', 'ASC'],
-        [Database.seriesModel, 'bookSeries', 'createdAt', 'ASC']
       ]
     })
     for (const book of booksWithTag) {
@@ -72,7 +68,7 @@ module.exports = {
   /**
    * Get all library items that have genres
    * @param {string[]} genres 
-   * @returns {Promise<import('../../models/LibraryItem')[]>}
+   * @returns {Promise<LibraryItem[]>}
    */
   async getAllLibraryItemsWithGenres(genres) {
     const libraryItems = []

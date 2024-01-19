@@ -19,11 +19,12 @@ class Setting extends Model {
   }
 
   static async getOldSettings() {
-    const settings = (await this.findAll()).map((se) => se.value)
+    const settings = (await this.findAll()).map(se => se.value)
 
-    const emailSettingsJson = settings.find((se) => se.id === 'email-settings')
-    const serverSettingsJson = settings.find((se) => se.id === 'server-settings')
-    const notificationSettingsJson = settings.find((se) => se.id === 'notification-settings')
+
+    const emailSettingsJson = settings.find(se => se.id === 'email-settings')
+    const serverSettingsJson = settings.find(se => se.id === 'server-settings')
+    const notificationSettingsJson = settings.find(se => se.id === 'notification-settings')
 
     return {
       settings,
@@ -42,22 +43,19 @@ class Setting extends Model {
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize
+   * @param {import('../Database').sequelize} sequelize 
    */
   static init(sequelize) {
-    super.init(
-      {
-        key: {
-          type: DataTypes.STRING,
-          primaryKey: true
-        },
-        value: DataTypes.JSON
+    super.init({
+      key: {
+        type: DataTypes.STRING,
+        primaryKey: true
       },
-      {
-        sequelize,
-        modelName: 'setting'
-      }
-    )
+      value: DataTypes.JSON
+    }, {
+      sequelize,
+      modelName: 'setting'
+    })
   }
 }
 

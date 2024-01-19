@@ -89,14 +89,6 @@
         </template>
       </div>
     </div>
-    <div v-if="language" class="flex py-0.5">
-      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
-        <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelLanguage }}</span>
-      </div>
-      <div>
-        <nuxt-link :to="`/library/${libraryId}/bookshelf?filter=languages.${$encode(language)}`" class="hover:underline">{{ language }}</nuxt-link>
-      </div>
-    </div>
     <div v-if="tracks.length || audioFile || (isPodcast && totalPodcastDuration)" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelDuration }}</span>
@@ -189,9 +181,6 @@ export default {
     },
     narrators() {
       return this.mediaMetadata.narrators || []
-    },
-    language() {
-      return this.mediaMetadata.language || null
     },
     durationPretty() {
       if (this.isPodcast) return this.$elapsedPrettyExtended(this.totalPodcastDuration)

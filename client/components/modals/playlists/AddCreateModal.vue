@@ -115,7 +115,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to get playlists', error)
-          this.$toast.error(this.$strings.ToastFailedToLoadData)
+          this.$toast.error('Failed to load user playlists')
         })
         .finally(() => {
           this.processing = false

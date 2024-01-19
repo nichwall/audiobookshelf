@@ -15,19 +15,12 @@ class AuthorFinder {
     return this.audnexus.findAuthorByASIN(asin, region)
   }
 
-  /**
-   * 
-   * @param {string} name 
-   * @param {string} region 
-   * @param {Object} [options={}] 
-   * @returns {Promise<import('../providers/Audnexus').AuthorSearchObj>}
-   */
   async findAuthorByName(name, region, options = {}) {
     if (!name) return null
     const maxLevenshtein = !isNaN(options.maxLevenshtein) ? Number(options.maxLevenshtein) : 3
 
     const author = await this.audnexus.findAuthorByName(name, region, maxLevenshtein)
-    if (!author?.name) {
+    if (!author || !author.name) {
       return null
     }
     return author

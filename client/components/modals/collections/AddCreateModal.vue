@@ -122,7 +122,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to get collections', error)
-          this.$toast.error(this.$strings.ToastFailedToLoadData)
+          this.$toast.error('Failed to load collections')
         })
         .finally(() => {
           this.processing = false

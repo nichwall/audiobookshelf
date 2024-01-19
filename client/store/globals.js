@@ -21,7 +21,7 @@ export const state = () => ({
   selectedCollection: null,
   selectedAuthor: null,
   selectedMediaItems: [],
-  selectedRawCoverUrl: null,
+  selectedLibraryItemId: null,
   isCasting: false, // Actively casting
   isChromecastInitialized: false, // Script loadeds
   showBatchQuickMatchModal: false,
@@ -82,40 +82,34 @@ export const state = () => ({
 })
 
 export const getters = {
-  getLibraryItemCoverSrc:
-    (state, getters, rootState, rootGetters) =>
-    (libraryItem, placeholder = null, raw = false) => {
-      if (!placeholder) placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
-      if (!libraryItem) return placeholder
-      const media = libraryItem.media
-      if (!media?.coverPath || media.coverPath === placeholder) return placeholder
+  getLibraryItemCoverSrc: (state, getters, rootState, rootGetters) => (libraryItem, placeholder = null, raw = false) => {
+    if (!placeholder) placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
+    if (!libraryItem) return placeholder
+    const media = libraryItem.media
+    if (!media?.coverPath || media.coverPath === placeholder) return placeholder
 
-      // Absolute URL covers (should no longer be used)
-      if (media.coverPath.startsWith('http:') || media.coverPath.startsWith('https:')) return media.coverPath
+    // Absolute URL covers (should no longer be used)
+    if (media.coverPath.startsWith('http:') || media.coverPath.startsWith('https:')) return media.coverPath
 
-      const userToken = rootGetters['user/getToken']
-      const lastUpdate = libraryItem.updatedAt || Date.now()
-      const libraryItemId = libraryItem.libraryItemId || libraryItem.id // Workaround for /users/:id page showing media progress covers
+    const userToken = rootGetters['user/getToken']
+    const lastUpdate = libraryItem.updatedAt || Date.now()
+    const libraryItemId = libraryItem.libraryItemId || libraryItem.id // Workaround for /users/:id page showing media progress covers
 
-      if (process.env.NODE_ENV !== 'production') {
-        // Testing
-        return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}${raw ? '&raw=1' : ''}`
-      }
+    if (process.env.NODE_ENV !== 'production') { // Testing
+      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}${raw ? '&raw=1' : ''}`
+    }
 
-      return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}${raw ? '&raw=1' : ''}`
-    },
-  getLibraryItemCoverSrcById:
-    (state, getters, rootState, rootGetters) =>
-    (libraryItemId, timestamp = null, raw = false) => {
-      const placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
-      if (!libraryItemId) return placeholder
-      const userToken = rootGetters['user/getToken']
-      if (process.env.NODE_ENV !== 'production') {
-        // Testing
-        return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}${raw ? '&raw=1' : ''}${timestamp ? `&ts=${timestamp}` : ''}`
-      }
-      return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}${raw ? '&raw=1' : ''}${timestamp ? `&ts=${timestamp}` : ''}`
-    },
+    return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}`
+  },
+  getLibraryItemCoverSrcById: (state, getters, rootState, rootGetters) => (libraryItemId, timestamp = null, raw = false) => {
+    const placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
+    if (!libraryItemId) return placeholder
+    const userToken = rootGetters['user/getToken']
+    if (process.env.NODE_ENV !== 'production') { // Testing
+      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}${raw ? '&raw=1' : ''}${timestamp ? `&ts=${timestamp}` : ''}`
+    }
+    return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}${raw ? '&raw=1' : ''}${timestamp ? `&ts=${timestamp}` : ''}`
+  },
   getIsBatchSelectingMediaItems: (state) => {
     return state.selectedMediaItems.length
   }
@@ -167,8 +161,8 @@ export const mutations = {
   setShowRawCoverPreviewModal(state, val) {
     state.showRawCoverPreviewModal = val
   },
-  setRawCoverPreviewModal(state, rawCoverUrl) {
-    state.selectedRawCoverUrl = rawCoverUrl
+  setRawCoverPreviewModal(state, libraryItemId) {
+    state.selectedLibraryItemId = libraryItemId
     state.showRawCoverPreviewModal = true
   },
   setEditCollection(state, collection) {
@@ -208,16 +202,17 @@ export const mutations = {
     state.selectedMediaItems = []
   },
   toggleMediaItemSelected(state, item) {
-    if (state.selectedMediaItems.some((i) => i.id === item.id)) {
-      state.selectedMediaItems = state.selectedMediaItems.filter((i) => i.id !== item.id)
+    if (state.selectedMediaItems.some(i => i.id === item.id)) {
+      state.selectedMediaItems = state.selectedMediaItems.filter(i => i.id !== item.id)
     } else {
       state.selectedMediaItems.push(item)
     }
   },
   setMediaItemSelected(state, { item, selected }) {
-    const isAlreadySelected = state.selectedMediaItems.some((i) => i.id === item.id)
+    const isAlreadySelected = state.selectedMediaItems.some(i => i.id === item.id)
     if (isAlreadySelected && !selected) {
-      state.selectedMediaItems = state.selectedMediaItems.filter((i) => i.id !== item.id)
+      state.selectedMediaItems = state.selectedMediaItems.filter(i => i.id !== item.id)
+
     } else if (selected && !isAlreadySelected) {
       state.selectedMediaItems.push(item)
     }

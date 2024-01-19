@@ -17,6 +17,7 @@ const Backup = require('../objects/Backup')
 
 class BackupManager {
   constructor() {
+    this.BackupPath = Path.join(global.MetadataPath, 'backups')
     this.ItemsMetadataPath = Path.join(global.MetadataPath, 'items')
     this.AuthorsMetadataPath = Path.join(global.MetadataPath, 'authors')
 
@@ -25,8 +26,8 @@ class BackupManager {
     this.backups = []
   }
 
-  get backupPath() {
-    return global.ServerSettings.backupPath
+  get backupLocation() {
+    return this.BackupPath
   }
 
   get backupSchedule() {
@@ -42,23 +43,13 @@ class BackupManager {
   }
 
   async init() {
-    const backupsDirExists = await fs.pathExists(this.backupPath)
+    const backupsDirExists = await fs.pathExists(this.BackupPath)
     if (!backupsDirExists) {
-      await fs.ensureDir(this.backupPath)
+      await fs.ensureDir(this.BackupPath)
     }
 
     await this.loadBackups()
     this.scheduleCron()
-  }
-
-  /**
-   * Reload backups after updating backup path
-   */
-  async reload() {
-    Logger.info(`[BackupManager] Reloading backups with backup path "${this.backupPath}"`)
-    this.backups = []
-    await this.loadBackups()
-    this.updateCronSchedule()
   }
 
   scheduleCron() {
@@ -96,14 +87,11 @@ class BackupManager {
       return res.status(500).send('Invalid backup file')
     }
 
-    const tempPath = Path.join(this.backupPath, fileUtils.sanitizeFilename(backupFile.name))
-    const success = await backupFile
-      .mv(tempPath)
-      .then(() => true)
-      .catch((error) => {
-        Logger.error('[BackupManager] Failed to move backup file', path, error)
-        return false
-      })
+    const tempPath = Path.join(this.BackupPath, fileUtils.sanitizeFilename(backupFile.name))
+    const success = await backupFile.mv(tempPath).then(() => true).catch((error) => {
+      Logger.error('[BackupManager] Failed to move backup file', path, error)
+      return false
+    })
     if (!success) {
       return res.status(500).send('Failed to move backup file into backups directory')
     }
@@ -134,7 +122,7 @@ class BackupManager {
 
     backup.fileSize = await getFileSize(backup.fullPath)
 
-    const existingBackupIndex = this.backups.findIndex((b) => b.id === backup.id)
+    const existingBackupIndex = this.backups.findIndex(b => b.id === backup.id)
     if (existingBackupIndex >= 0) {
       Logger.warn(`[BackupManager] Backup already exists with id ${backup.id} - overwriting`)
       this.backups.splice(existingBackupIndex, 1, backup)
@@ -143,7 +131,7 @@ class BackupManager {
     }
 
     res.json({
-      backups: this.backups.map((b) => b.toJSON())
+      backups: this.backups.map(b => b.toJSON())
     })
   }
 
@@ -151,91 +139,41 @@ class BackupManager {
     var backupSuccess = await this.runBackup()
     if (backupSuccess) {
       res.json({
-        backups: this.backups.map((b) => b.toJSON())
+        backups: this.backups.map(b => b.toJSON())
       })
     } else {
       res.sendStatus(500)
     }
   }
 
-  /**
-   *
-   * @param {import('./ApiCacheManager')} apiCacheManager
-   * @param {Backup} backup
-   * @param {import('express').Response} res
-   */
-  async requestApplyBackup(apiCacheManager, backup, res) {
-    Logger.info(`[BackupManager] Applying backup at "${backup.fullPath}"`)
-
+  async requestApplyBackup(backup, res) {
     const zip = new StreamZip.async({ file: backup.fullPath })
 
     const entries = await zip.entries()
-
-    // Ensure backup has an absdatabase.sqlite file
     if (!Object.keys(entries).includes('absdatabase.sqlite')) {
       Logger.error(`[BackupManager] Cannot apply old backup ${backup.fullPath}`)
-      await zip.close()
       return res.status(500).send('Invalid backup file. Does not include absdatabase.sqlite. This might be from an older Audiobookshelf server.')
     }
 
     await Database.disconnect()
 
-    const dbPath = Path.join(global.ConfigPath, 'absdatabase.sqlite')
-    const tempDbPath = Path.join(global.ConfigPath, 'absdatabase-temp.sqlite')
-
-    // Extract backup sqlite file to temporary path
-    await zip.extract('absdatabase.sqlite', tempDbPath)
-    Logger.info(`[BackupManager] Extracted backup sqlite db to temp path ${tempDbPath}`)
-
-    // Verify extract - Abandon backup if sqlite file did not extract
-    if (!(await fs.pathExists(tempDbPath))) {
-      Logger.error(`[BackupManager] Sqlite file not found after extract - abandon backup apply and reconnect db`)
-      await zip.close()
-      await Database.reconnect()
-      return res.status(500).send('Failed to extract sqlite db from backup')
-    }
-
-    // Attempt to remove existing db file
-    try {
-      await fs.remove(dbPath)
-    } catch (error) {
-      // Abandon backup and remove extracted sqlite file if unable to remove existing db file
-      Logger.error(`[BackupManager] Unable to overwrite existing db file - abandon backup apply and reconnect db`, error)
-      await fs.remove(tempDbPath)
-      await zip.close()
-      await Database.reconnect()
-      return res.status(500).send(`Failed to overwrite sqlite db: ${error?.message || 'Unknown Error'}`)
-    }
-
-    // Rename temp db
-    await fs.move(tempDbPath, dbPath)
-    Logger.info(`[BackupManager] Saved backup sqlite file at "${dbPath}"`)
-
-    // Extract /metadata/items and /metadata/authors folders
+    await zip.extract('absdatabase.sqlite', global.ConfigPath)
     await zip.extract('metadata-items/', this.ItemsMetadataPath)
     await zip.extract('metadata-authors/', this.AuthorsMetadataPath)
-    await zip.close()
 
-    // Reconnect db
     await Database.reconnect()
 
-    // Reset api cache, set hooks again
-    await apiCacheManager.reset()
-
-    res.sendStatus(200)
-
-    // Triggers browser refresh for all clients
     SocketAuthority.emitter('backup_applied')
   }
 
   async loadBackups() {
     try {
-      const filesInDir = await fs.readdir(this.backupPath)
+      const filesInDir = await fs.readdir(this.BackupPath)
 
       for (let i = 0; i < filesInDir.length; i++) {
         const filename = filesInDir[i]
         if (filename.endsWith('.audiobookshelf')) {
-          const fullFilePath = Path.join(this.backupPath, filename)
+          const fullFilePath = Path.join(this.BackupPath, filename)
 
           let zip = null
           let data = null
@@ -251,16 +189,14 @@ class BackupManager {
 
           const backup = new Backup({ details, fullPath: fullFilePath })
 
-          if (!backup.serverVersion) {
-            // Backups before v2
+          if (!backup.serverVersion) { // Backups before v2
             Logger.error(`[BackupManager] Old unsupported backup was found "${backup.filename}"`)
-          } else if (!backup.key) {
-            // Backups before sqlite migration
+          } else if (!backup.key) { // Backups before sqlite migration
             Logger.warn(`[BackupManager] Old unsupported backup was found "${backup.filename}" (pre sqlite migration)`)
           }
 
           backup.fileSize = await getFileSize(backup.fullPath)
-          const existingBackupWithId = this.backups.find((b) => b.id === backup.id)
+          const existingBackupWithId = this.backups.find(b => b.id === backup.id)
           if (existingBackupWithId) {
             Logger.warn(`[BackupManager] Backup already loaded with id ${backup.id} - ignoring`)
           } else {
@@ -281,7 +217,7 @@ class BackupManager {
     // Check if Metadata Path is inside Config Path (otherwise there will be an infinite loop as the archiver tries to zip itself)
     Logger.info(`[BackupManager] Running Backup`)
     const newBackup = new Backup()
-    newBackup.setData(this.backupPath)
+    newBackup.setData(this.BackupPath)
 
     await fs.ensureDir(this.AuthorsMetadataPath)
 
@@ -310,7 +246,7 @@ class BackupManager {
 
     newBackup.fileSize = await getFileSize(newBackup.fullPath)
 
-    const existingIndex = this.backups.findIndex((b) => b.id === newBackup.id)
+    const existingIndex = this.backups.findIndex(b => b.id === newBackup.id)
     if (existingIndex >= 0) {
       this.backups.splice(existingIndex, 1, newBackup)
     } else {
@@ -332,7 +268,7 @@ class BackupManager {
     try {
       Logger.debug(`[BackupManager] Removing Backup "${backup.fullPath}"`)
       await fs.remove(backup.fullPath)
-      this.backups = this.backups.filter((b) => b.id !== backup.id)
+      this.backups = this.backups.filter(b => b.id !== backup.id)
       Logger.info(`[BackupManager] Backup "${backup.id}" Removed`)
     } catch (error) {
       Logger.error(`[BackupManager] Failed to remove backup`, error)

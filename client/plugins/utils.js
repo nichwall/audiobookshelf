@@ -2,10 +2,7 @@ import Vue from 'vue'
 import cronParser from 'cron-parser'
 import { nanoid } from 'nanoid'
 
-Vue.prototype.$randomId = (len = null) => {
-  if (len && !isNaN(len)) return nanoid(len)
-  return nanoid()
-}
+Vue.prototype.$randomId = () => nanoid()
 
 Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
   if (isNaN(bytes) || bytes == 0) {
@@ -133,7 +130,7 @@ Vue.prototype.$parseCronExpression = (expression) => {
       value: '* * * * *'
     }
   ]
-  const patternMatch = commonPatterns.find((p) => p.value === expression)
+  const patternMatch = commonPatterns.find(p => p.value === expression)
   if (patternMatch) {
     return {
       description: patternMatch.text
@@ -146,17 +143,13 @@ Vue.prototype.$parseCronExpression = (expression) => {
   if (pieces[2] !== '*' || pieces[3] !== '*') {
     return null
   }
-  if (pieces[4] !== '*' && pieces[4].split(',').some((p) => isNaN(p))) {
+  if (pieces[4] !== '*' && pieces[4].split(',').some(p => isNaN(p))) {
     return null
   }
 
   const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
   var weekdayText = 'day'
-  if (pieces[4] !== '*')
-    weekdayText = pieces[4]
-      .split(',')
-      .map((p) => weekdays[p])
-      .join(', ')
+  if (pieces[4] !== '*') weekdayText = pieces[4].split(',').map(p => weekdays[p]).join(', ')
 
   return {
     description: `Run every ${weekdayText} at ${pieces[1]}:${pieces[0].padStart(2, '0')}`
@@ -189,8 +182,10 @@ Vue.prototype.$downloadFile = (url, filename = null, openInNewTab = false) => {
 
 export function supplant(str, subs) {
   // source: http://crockford.com/javascript/remedial.html
-  return str.replace(/{([^{}]*)}/g, function (a, b) {
-    var r = subs[b]
-    return typeof r === 'string' || typeof r === 'number' ? r : a
-  })
+  return str.replace(/{([^{}]*)}/g,
+    function (a, b) {
+      var r = subs[b]
+      return typeof r === 'string' || typeof r === 'number' ? r : a
+    }
+  )
 }

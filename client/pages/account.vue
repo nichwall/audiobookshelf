@@ -82,33 +82,19 @@ export default {
       this.$setLanguageCode(lang)
     },
     logout() {
-      // Disconnect from socket
-      if (this.$root.socket) {
-        console.log('Disconnecting from socket', this.$root.socket.id)
-        this.$root.socket.removeAllListeners()
-        this.$root.socket.disconnect()
+      var rootSocket = this.$root.socket || {}
+      const logoutPayload = {
+        socketId: rootSocket.id
       }
-
+      this.$axios.$post('/logout', logoutPayload).catch((error) => {
+        console.error(error)
+      })
       if (localStorage.getItem('token')) {
         localStorage.removeItem('token')
       }
       this.$store.commit('libraries/setUserPlaylists', [])
       this.$store.commit('libraries/setCollections', [])
-
-      this.$axios
-        .$post('/logout')
-        .then((logoutPayload) => {
-          const redirect_url = logoutPayload.redirect_url
-
-          if (redirect_url) {
-            window.location.href = redirect_url
-          } else {
-            this.$router.push('/login')
-          }
-        })
-        .catch((error) => {
-          console.error(error)
-        })
+      this.$router.push('/login')
     },
     resetForm() {
       this.password = null

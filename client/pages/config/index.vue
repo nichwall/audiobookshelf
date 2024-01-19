@@ -199,15 +199,16 @@
 
     <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
 
-    <!-- confirm cache purge dialog -->
     <prompt-dialog v-model="showConfirmPurgeCache" :width="675">
       <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
-        <p class="text-error font-semibold">{{ $strings.MessageImportantNotice }}</p>
-        <p class="my-8 text-center" v-html="$strings.MessageConfirmPurgeCache" />
+        <p class="text-error font-semibold">Important Notice!</p>
+        <p class="my-2 text-center">Purge cache will delete the entire directory at <span class="font-mono">/metadata/cache</span>.</p>
+
+        <p class="text-center mb-8">Are you sure you want to remove the cache directory?</p>
         <div class="flex px-1 items-center">
-          <ui-btn color="primary" @click="showConfirmPurgeCache = false">{{ $strings.ButtonNevermind }}</ui-btn>
+          <ui-btn color="primary" @click="showConfirmPurgeCache = false">Nevermind</ui-btn>
           <div class="flex-grow" />
-          <ui-btn color="success" @click="confirmPurge">{{ $strings.ButtonYes }}</ui-btn>
+          <ui-btn color="success" @click="confirmPurge">Yes, Purge!</ui-btn>
         </div>
       </div>
     </prompt-dialog>
@@ -274,7 +275,7 @@ export default {
     updateSortingPrefixes() {
       const prefixes = [...new Set(this.newServerSettings.sortingPrefixes.map((prefix) => prefix.trim().toLowerCase()) || [])]
       if (!prefixes.length) {
-        this.$toast.error(this.$strings.ToastSortingPrefixesEmptyError)
+        this.$toast.error('Must have at least 1 prefix')
         return
       }
 
@@ -282,7 +283,7 @@ export default {
       this.$axios
         .$patch(`/api/sorting-prefixes`, { sortingPrefixes: prefixes })
         .then((data) => {
-          this.$toast.success(this.$getString('ToastSortingPrefixesUpdateSuccess', [data.rowsUpdated]))
+          this.$toast.success(`Sorting prefixes updated. ${data.rowsUpdated} rows`)
           if (data.serverSettings) {
             this.$store.commit('setServerSettings', data.serverSettings)
           }
@@ -290,7 +291,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to update prefixes', error)
-          this.$toast.error(this.$strings.ToastSortingPrefixesUpdateFailed)
+          this.$toast.error('Failed to update sorting prefixes')
         })
         .finally(() => {
           this.savingPrefixes = false
@@ -328,7 +329,7 @@ export default {
         .dispatch('updateServerSettings', payload)
         .then(() => {
           this.updatingServerSettings = false
-          this.$toast.success(this.$strings.ToastServerSettingsUpdateSuccess)
+          this.$toast.success('Server settings updated')
 
           if (payload.language) {
             // Updating language after save allows for re-rendering
@@ -338,7 +339,7 @@ export default {
         .catch((error) => {
           console.error('Failed to update server settings', error)
           this.updatingServerSettings = false
-          this.$toast.error(this.$strings.ToastServerSettingsUpdateFailed)
+          this.$toast.error('Failed to update server settings')
         })
     },
     initServerSettings() {
@@ -358,18 +359,17 @@ export default {
       await this.$axios
         .$post('/api/cache/purge')
         .then(() => {
-          this.$toast.success(this.$strings.ToastCachePurgeSuccess)
+          this.$toast.success('Cache Purged!')
         })
         .catch((error) => {
           console.error('Failed to purge cache', error)
-          this.$toast.error(this.$strings.ToastCachePurgeFailed)
+          this.$toast.error('Failed to purge cache')
         })
       this.isPurgingCache = false
     },
     purgeItemsCache() {
       const payload = {
-        // message: `This will delete the entire folder at <code>/metadata/cache/items</code>.<br />Are you sure you want to purge items cache?`,
-        message: this.$strings.MessageConfirmPurgeItemsCache,
+        message: `<span class="text-warning text-base">Warning! This will delete the entire folder at /metadata/cache/items.</span><br />Are you sure you want to purge items cache?`,
         callback: (confirmed) => {
           if (confirmed) {
             this.sendPurgeItemsCache()
@@ -384,11 +384,11 @@ export default {
       await this.$axios
         .$post('/api/cache/items/purge')
         .then(() => {
-          this.$toast.success(this.$strings.ToastCachePurgeSuccess)
+          this.$toast.success('Items Cache Purged!')
         })
         .catch((error) => {
           console.error('Failed to purge items cache', error)
-          this.$toast.error(this.$strings.ToastCachePurgeFailed)
+          this.$toast.error('Failed to purge items cache')
         })
       this.isPurgingCache = false
     }

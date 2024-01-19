@@ -2,51 +2,16 @@ const axios = require('axios')
 const Logger = require('../Logger')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
-/**
- * @typedef iTunesSearchParams
- * @property {string} term
- * @property {string} country
- * @property {string} media
- * @property {string} entity
- * @property {number} limit
- */
-
-/**
- * @typedef iTunesPodcastSearchResult
- * @property {string} id
- * @property {string} artistId
- * @property {string} title
- * @property {string} artistName
- * @property {string} description
- * @property {string} descriptionPlain
- * @property {string} releaseDate
- * @property {string[]} genres
- * @property {string} cover
- * @property {string} feedUrl
- * @property {string} pageUrl
- * @property {boolean} explicit
- */
-
 class iTunes {
-  #responseTimeout = 30000
+  constructor() { }
 
-  constructor() {}
-
-  /**
-   * @see https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/Searching.html
-   *
-   * @param {iTunesSearchParams} options
-   * @param {number} [timeout] response timeout in ms
-   * @returns {Promise<Object[]>}
-   */
-  search(options, timeout = this.#responseTimeout) {
+  // https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/Searching.html
+  search(options) {
     if (!options.term) {
       Logger.error('[iTunes] Invalid search options - no term')
       return []
     }
-    if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
-
-    const query = {
+    var query = {
       term: options.term,
       media: options.media,
       entity: options.entity,
@@ -54,18 +19,12 @@ class iTunes {
       limit: options.limit,
       country: options.country
     }
-    return axios
-      .get('https://itunes.apple.com/search', {
-        params: query,
-        timeout
-      })
-      .then((response) => {
-        return response.data.results || []
-      })
-      .catch((error) => {
-        Logger.error(`[iTunes] search request error`, error)
-        return []
-      })
+    return axios.get('https://itunes.apple.com/search', { params: query }).then((response) => {
+      return response.data.results || []
+    }).catch((error) => {
+      Logger.error(`[iTunes] search request error`, error)
+      return []
+    })
   }
 
   // Example cover art: https://is1-ssl.mzstatic.com/image/thumb/Music118/v4/cb/ea/73/cbea739b-ff3b-11c4-fb93-7889fbec7390/9781598874983_cover.jpg/100x100bb.jpg
@@ -76,22 +35,20 @@ class iTunes {
       return data.artworkUrl600
     }
     // Should already be sorted from small to large
-    var artworkSizes = Object.keys(data)
-      .filter((key) => key.startsWith('artworkUrl'))
-      .map((key) => {
-        return {
-          url: data[key],
-          size: Number(key.replace('artworkUrl', ''))
-        }
-      })
+    var artworkSizes = Object.keys(data).filter(key => key.startsWith('artworkUrl')).map(key => {
+      return {
+        url: data[key],
+        size: Number(key.replace('artworkUrl', ''))
+      }
+    })
     if (!artworkSizes.length) return null
 
     // Return next biggest size > 600
-    var nextBestSize = artworkSizes.find((size) => size.size > 600)
+    var nextBestSize = artworkSizes.find(size => size.size > 600)
     if (nextBestSize) return nextBestSize.url
 
     // Find square artwork
-    var squareArtwork = artworkSizes.find((size) => size.url.includes(`${size.size}x${size.size}bb`))
+    var squareArtwork = artworkSizes.find(size => size.url.includes(`${size.size}x${size.size}bb`))
 
     // Square cover replace with 600x600bb
     if (squareArtwork) {
@@ -119,23 +76,12 @@ class iTunes {
     }
   }
 
-  /**
-   *
-   * @param {string} term
-   * @param {number} [timeout] response timeout in ms
-   * @returns {Promise<Object[]>}
-   */
-  searchAudiobooks(term, timeout = this.#responseTimeout) {
-    return this.search({ term, entity: 'audiobook', media: 'audiobook' }, timeout).then((results) => {
+  searchAudiobooks(term) {
+    return this.search({ term, entity: 'audiobook', media: 'audiobook' }).then((results) => {
       return results.map(this.cleanAudiobook.bind(this))
     })
   }
 
-  /**
-   *
-   * @param {Object} data
-   * @returns {iTunesPodcastSearchResult}
-   */
   cleanPodcast(data) {
     return {
       id: data.collectionId,
@@ -154,15 +100,8 @@ class iTunes {
     }
   }
 
-  /**
-   *
-   * @param {string} term
-   * @param {{country:string}} options
-   * @param {number} [timeout] response timeout in ms
-   * @returns {Promise<iTunesPodcastSearchResult[]>}
-   */
-  searchPodcasts(term, options = {}, timeout = this.#responseTimeout) {
-    return this.search({ term, entity: 'podcast', media: 'podcast', ...options }, timeout).then((results) => {
+  searchPodcasts(term, options = {}) {
+    return this.search({ term, entity: 'podcast', media: 'podcast', ...options }).then((results) => {
       return results.map(this.cleanPodcast.bind(this))
     })
   }

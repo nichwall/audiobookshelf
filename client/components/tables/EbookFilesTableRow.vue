@@ -115,11 +115,11 @@ export default {
             this.$axios
               .$delete(`/api/items/${this.libraryItemId}/file/${this.file.ino}`)
               .then(() => {
-                this.$toast.success(this.$strings.ToastDeleteFileSuccess)
+                this.$toast.success('File deleted')
               })
               .catch((error) => {
                 console.error('Failed to delete file', error)
-                this.$toast.error(this.$strings.ToastDeleteFileFailed)
+                this.$toast.error('Failed to delete file')
               })
               .finally(() => {
                 this.processing = false

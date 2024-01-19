@@ -51,8 +51,6 @@ module.exports = {
         [Sequelize.Op.gte]: 1
       })
       replacements.filterValue = value
-    } else if (group === 'languages') {
-      mediaWhere['language'] = value
     }
 
     return {

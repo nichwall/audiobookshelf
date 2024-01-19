@@ -284,7 +284,7 @@ class MiscController {
     }
 
     res.json({
-      tags: tags.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+      tags: tags
     })
   }
 
@@ -329,7 +329,6 @@ class MiscController {
         await libraryItem.media.update({
           tags: libraryItem.media.tags
         })
-        await libraryItem.saveMetadataFile()
         const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
         SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
         numItemsUpdated++
@@ -371,7 +370,6 @@ class MiscController {
       await libraryItem.media.update({
         tags: libraryItem.media.tags
       })
-      await libraryItem.saveMetadataFile()
       const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
       numItemsUpdated++
@@ -464,7 +462,6 @@ class MiscController {
         await libraryItem.media.update({
           genres: libraryItem.media.genres
         })
-        await libraryItem.saveMetadataFile()
         const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
         SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
         numItemsUpdated++
@@ -506,7 +503,6 @@ class MiscController {
       await libraryItem.media.update({
         genres: libraryItem.media.genres
       })
-      await libraryItem.saveMetadataFile()
       const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
       numItemsUpdated++
@@ -637,7 +633,7 @@ class MiscController {
       } else if (key === 'authOpenIDMobileRedirectURIs') {
         function isValidRedirectURI(uri) {
           if (typeof uri !== 'string') return false
-          const pattern = new RegExp('^\\w+://[\\w\\.-]+(/[\\w\\./-]*)*$', 'i')
+          const pattern = new RegExp('^\\w+://[\\w.-]+$', 'i')
           return pattern.test(uri)
         }
 
@@ -703,7 +699,7 @@ class MiscController {
   }
 
   /**
-   * GET: /api/stats/year/:year
+   * GET: /api/me/stats/year/:year
    * 
    * @param {import('express').Request} req 
    * @param {import('express').Response} res 
@@ -720,24 +716,6 @@ class MiscController {
     }
     const stats = await adminStats.getStatsForYear(year)
     res.json(stats)
-  }
-
-  /**
-   * GET: /api/logger-data
-   * admin or up
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
-   */
-  async getLoggerData(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get logger data`)
-      return res.sendStatus(403)
-    }
-
-    res.json({
-      currentDailyLogs: Logger.logManager.getMostRecentCurrentDailyLogs()
-    })
   }
 }
 module.exports = new MiscController()

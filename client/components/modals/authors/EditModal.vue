@@ -9,7 +9,7 @@
       <div class="flex">
         <div class="w-40 p-2">
           <div class="w-full h-45 relative">
-            <covers-author-image :author="authorCopy" />
+            <covers-author-image :author="author" />
             <div v-if="userCanDelete && !processing && author.imagePath" class="absolute top-0 left-0 w-full h-full opacity-0 hover:opacity-100">
               <span class="absolute top-2 right-2 material-icons text-error transform hover:scale-125 transition-transform cursor-pointer text-lg" @click="removeCover">delete</span>
             </div>
@@ -30,6 +30,9 @@
                 <ui-text-input-with-label v-model="authorCopy.asin" :disabled="processing" label="ASIN" />
               </div>
             </div>
+            <!-- <div class="p-2">
+              <ui-text-input-with-label v-model="authorCopy.imagePath" :disabled="processing" :label="$strings.LabelPhotoPathURL" />
+            </div> -->
             <div class="p-2">
               <ui-textarea-with-label v-model="authorCopy.description" :disabled="processing" :label="$strings.LabelDescription" :rows="8" />
             </div>
@@ -103,9 +106,9 @@ export default {
   methods: {
     init() {
       this.imageUrl = ''
-      this.authorCopy = {
-        ...this.author
-      }
+      this.authorCopy.name = this.author.name
+      this.authorCopy.asin = this.author.asin
+      this.authorCopy.description = this.author.description
     },
     removeClick() {
       const payload = {
@@ -168,9 +171,7 @@ export default {
         .$delete(`/api/authors/${this.authorId}/image`)
         .then((data) => {
           this.$toast.success(this.$strings.ToastAuthorImageRemoveSuccess)
-
-          this.authorCopy.updatedAt = data.author.updatedAt
-          this.authorCopy.imagePath = data.author.imagePath
+          this.$store.commit('globals/showEditAuthorModal', data.author)
         })
         .catch((error) => {
           console.error('Failed', error)
@@ -195,9 +196,7 @@ export default {
         .then((data) => {
           this.imageUrl = ''
           this.$toast.success('Author image updated')
-
-          this.authorCopy.updatedAt = data.author.updatedAt
-          this.authorCopy.imagePath = data.author.imagePath
+          this.$store.commit('globals/showEditAuthorModal', data.author)
         })
         .catch((error) => {
           console.error('Failed', error)
@@ -232,11 +231,8 @@ export default {
       } else if (response.updated) {
         if (response.author.imagePath) {
           this.$toast.success(this.$strings.ToastAuthorUpdateSuccess)
+          this.$store.commit('globals/showEditAuthorModal', response.author)
         } else this.$toast.success(this.$strings.ToastAuthorUpdateSuccessNoImageFound)
-
-        this.authorCopy = {
-          ...response.author
-        }
       } else {
         this.$toast.info('No updates were made for Author')
       }

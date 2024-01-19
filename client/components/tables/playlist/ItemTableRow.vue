@@ -38,7 +38,7 @@
         <div v-if="userCanUpdate" class="mx-1" :class="isHovering ? '' : 'ml-6'">
           <ui-icon-btn icon="edit" borderless @click="clickEdit" />
         </div>
-        <div class="mx-1" :class="isHovering ? '' : 'ml-6'">
+        <div v-if="userCanDelete" class="mx-1">
           <ui-icon-btn icon="close" borderless @click="removeClick" />
         </div>
       </div>
@@ -75,7 +75,8 @@ export default {
   },
   computed: {
     translateDistance() {
-      if (!this.userCanUpdate) return '-translate-x-12'
+      if (!this.userCanUpdate && !this.userCanDelete) return 'translate-x-0'
+      else if (!this.userCanUpdate || !this.userCanDelete) return '-translate-x-12'
       return '-translate-x-24'
     },
     libraryItem() {

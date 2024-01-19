@@ -1,5 +1,5 @@
 const date = require('../libs/dateAndTime')
-const uuidv4 = require('uuid').v4
+const uuidv4 = require("uuid").v4
 const serverVersion = require('../../package.json').version
 const BookMetadata = require('./metadata/BookMetadata')
 const PodcastMetadata = require('./metadata/PodcastMetadata')
@@ -59,7 +59,7 @@ class PlaybackSession {
       episodeId: this.episodeId,
       mediaType: this.mediaType,
       mediaMetadata: this.mediaMetadata?.toJSON() || null,
-      chapters: (this.chapters || []).map((c) => ({ ...c })),
+      chapters: (this.chapters || []).map(c => ({ ...c })),
       displayTitle: this.displayTitle,
       displayAuthor: this.displayAuthor,
       coverPath: this.coverPath,
@@ -93,7 +93,7 @@ class PlaybackSession {
       episodeId: this.episodeId,
       mediaType: this.mediaType,
       mediaMetadata: this.mediaMetadata?.toJSON() || null,
-      chapters: (this.chapters || []).map((c) => ({ ...c })),
+      chapters: (this.chapters || []).map(c => ({ ...c })),
       displayTitle: this.displayTitle,
       displayAuthor: this.displayAuthor,
       coverPath: this.coverPath,
@@ -109,7 +109,7 @@ class PlaybackSession {
       currentTime: this.currentTime,
       startedAt: this.startedAt,
       updatedAt: this.updatedAt,
-      audioTracks: this.audioTracks.map((at) => at.toJSON?.() || { ...at }),
+      audioTracks: this.audioTracks.map(at => at.toJSON()),
       videoTrack: this.videoTrack?.toJSON() || null,
       libraryItem: libraryItem?.toJSONExpanded() || null
     }
@@ -182,8 +182,7 @@ class PlaybackSession {
     return this.libraryItemId
   }
 
-  get progress() {
-    // Value between 0 and 1
+  get progress() { // Value between 0 and 1
     if (!this.duration) return 0
     return Math.max(0, Math.min(this.currentTime / this.duration, 1))
   }
@@ -206,9 +205,9 @@ class PlaybackSession {
     }
   }
 
-  setData(libraryItem, userId, mediaPlayer, deviceInfo, startTime, episodeId = null) {
+  setData(libraryItem, user, mediaPlayer, deviceInfo, startTime, episodeId = null) {
     this.id = uuidv4()
-    this.userId = userId
+    this.userId = user.id
     this.libraryId = libraryItem.libraryId
     this.libraryItemId = libraryItem.id
     this.bookId = episodeId ? null : libraryItem.media.id

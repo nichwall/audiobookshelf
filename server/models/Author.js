@@ -26,6 +26,11 @@ class Author extends Model {
     this.createdAt
   }
 
+  static async getOldAuthors() {
+    const authors = await this.findAll()
+    return authors.map(au => au.getOldAuthor())
+  }
+
   getOldAuthor() {
     return new oldAuthor({
       id: this.id,
@@ -80,7 +85,7 @@ class Author extends Model {
 
   /**
    * Get oldAuthor by id
-   * @param {string} authorId
+   * @param {string} authorId 
    * @returns {Promise<oldAuthor>}
    */
   static async getOldById(authorId) {
@@ -91,7 +96,7 @@ class Author extends Model {
 
   /**
    * Check if author exists
-   * @param {string} authorId
+   * @param {string} authorId 
    * @returns {Promise<boolean>}
    */
   static async checkExistsById(authorId) {
@@ -101,111 +106,60 @@ class Author extends Model {
   /**
    * Get old author by name and libraryId. name case insensitive
    * TODO: Look for authors ignoring punctuation
-   *
-   * @param {string} authorName
-   * @param {string} libraryId
+   * 
+   * @param {string} authorName 
+   * @param {string} libraryId 
    * @returns {Promise<oldAuthor>}
    */
   static async getOldByNameAndLibrary(authorName, libraryId) {
-    const author = (
-      await this.findOne({
-        where: [
-          where(fn('lower', col('name')), authorName.toLowerCase()),
-          {
-            libraryId
-          }
-        ]
-      })
-    )?.getOldAuthor()
+    const author = (await this.findOne({
+      where: [
+        where(fn('lower', col('name')), authorName.toLowerCase()),
+        {
+          libraryId
+        }
+      ]
+    }))?.getOldAuthor()
     return author
   }
 
   /**
-   *
-   * @param {string} authorId
-   * @returns {Promise<import('./LibraryItem')[]>}
+   * Initialize model
+   * @param {import('../Database').sequelize} sequelize 
    */
-  static async getAllLibraryItemsForAuthor(authorId) {
-    const author = await this.findByPk(authorId, {
-      include: [
+  static init(sequelize) {
+    super.init({
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
+      },
+      name: DataTypes.STRING,
+      lastFirst: DataTypes.STRING,
+      asin: DataTypes.STRING,
+      description: DataTypes.TEXT,
+      imagePath: DataTypes.STRING
+    }, {
+      sequelize,
+      modelName: 'author',
+      indexes: [
         {
-          model: this.sequelize.models.book,
-          include: [
-            {
-              model: this.sequelize.models.libraryItem
-            },
-            {
-              model: this.sequelize.models.author,
-              through: {
-                attributes: []
-              }
-            },
-            {
-              model: this.sequelize.models.series,
-              through: {
-                attributes: ['sequence']
-              }
-            }
-          ]
+          fields: [{
+            name: 'name',
+            collate: 'NOCASE'
+          }]
+        },
+        // {
+        //   fields: [{
+        //     name: 'lastFirst',
+        //     collate: 'NOCASE'
+        //   }]
+        // },
+        {
+          fields: ['libraryId']
         }
       ]
     })
-
-    const libraryItems = []
-    if (author.books) {
-      for (const book of author.books) {
-        const libraryItem = book.libraryItem
-        libraryItem.media = book
-        delete book.libraryItem
-        libraryItems.push(libraryItem)
-      }
-    }
-
-    return libraryItems
-  }
-
-  /**
-   * Initialize model
-   * @param {import('../Database').sequelize} sequelize
-   */
-  static init(sequelize) {
-    super.init(
-      {
-        id: {
-          type: DataTypes.UUID,
-          defaultValue: DataTypes.UUIDV4,
-          primaryKey: true
-        },
-        name: DataTypes.STRING,
-        lastFirst: DataTypes.STRING,
-        asin: DataTypes.STRING,
-        description: DataTypes.TEXT,
-        imagePath: DataTypes.STRING
-      },
-      {
-        sequelize,
-        modelName: 'author',
-        indexes: [
-          {
-            fields: [
-              {
-                name: 'name',
-                collate: 'NOCASE'
-              }
-            ]
-          },
-          // {
-          //   fields: [{
-          //     name: 'lastFirst',
-          //     collate: 'NOCASE'
-          //   }]
-          // },
-          {
-            fields: ['libraryId']
-          }
-        ]
-      }
-    )
 
     const { library } = sequelize.models
     library.hasMany(Author, {

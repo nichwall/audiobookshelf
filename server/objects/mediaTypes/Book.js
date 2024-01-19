@@ -17,6 +17,7 @@ class Book {
 
     this.audioFiles = []
     this.chapters = []
+    this.missingParts = []
     this.ebookFile = null
 
     this.lastCoverSearch = null
@@ -35,6 +36,7 @@ class Book {
     this.tags = [...book.tags]
     this.audioFiles = book.audioFiles.map(f => new AudioFile(f))
     this.chapters = book.chapters.map(c => ({ ...c }))
+    this.missingParts = book.missingParts ? [...book.missingParts] : []
     this.ebookFile = book.ebookFile ? new EBookFile(book.ebookFile) : null
     this.lastCoverSearch = book.lastCoverSearch || null
     this.lastCoverSearchQuery = book.lastCoverSearchQuery || null
@@ -49,6 +51,7 @@ class Book {
       tags: [...this.tags],
       audioFiles: this.audioFiles.map(f => f.toJSON()),
       chapters: this.chapters.map(c => ({ ...c })),
+      missingParts: [...this.missingParts],
       ebookFile: this.ebookFile ? this.ebookFile.toJSON() : null
     }
   }
@@ -62,6 +65,8 @@ class Book {
       numTracks: this.tracks.length,
       numAudioFiles: this.audioFiles.length,
       numChapters: this.chapters.length,
+      numMissingParts: this.missingParts.length,
+      numInvalidAudioFiles: this.invalidAudioFiles.length,
       duration: this.duration,
       size: this.size,
       ebookFormat: this.ebookFile?.ebookFormat
@@ -80,6 +85,7 @@ class Book {
       duration: this.duration,
       size: this.size,
       tracks: this.tracks.map(t => t.toJSON()),
+      missingParts: [...this.missingParts],
       ebookFile: this.ebookFile?.toJSON() || null
     }
   }
@@ -103,8 +109,11 @@ class Book {
   get hasMediaEntities() {
     return !!this.tracks.length || this.ebookFile
   }
+  get invalidAudioFiles() {
+    return this.audioFiles.filter(af => af.invalid)
+  }
   get includedAudioFiles() {
-    return this.audioFiles.filter(af => !af.exclude)
+    return this.audioFiles.filter(af => !af.exclude && !af.invalid)
   }
   get tracks() {
     let startOffset = 0
@@ -229,6 +238,7 @@ class Book {
     this.audioFiles = orderedFileData.map((fileData) => {
       const audioFile = this.audioFiles.find(af => af.ino === fileData.ino)
       audioFile.manuallyVerified = true
+      audioFile.invalid = false
       audioFile.error = null
       if (fileData.exclude !== undefined) {
         audioFile.exclude = !!fileData.exclude
@@ -247,6 +257,7 @@ class Book {
   rebuildTracks() {
     Logger.debug(`[Book] Tracks being rebuilt...!`)
     this.audioFiles.sort((a, b) => a.index - b.index)
+    this.missingParts = []
   }
 
   // Only checks container format

@@ -46,12 +46,7 @@ export default {
     ereaderDevice: {
       type: Object,
       default: () => null
-    },
-    users: {
-      type: Array,
-      default: () => []
-    },
-    loadUsers: Function
+    }
   },
   data() {
     return {
@@ -61,7 +56,8 @@ export default {
         email: '',
         availabilityOption: 'adminAndUp',
         users: []
-      }
+      },
+      users: []
     }
   },
   watch: {
@@ -112,13 +108,25 @@ export default {
   methods: {
     availabilityOptionChanged(option) {
       if (option === 'specificUsers' && !this.users.length) {
-        this.callLoadUsers()
+        this.loadUsers()
       }
     },
-    async callLoadUsers() {
+    async loadUsers() {
       this.processing = true
-      await this.loadUsers()
-      this.processing = false
+      this.users = await this.$axios
+        .$get('/api/users')
+        .then((res) => {
+          return res.users.sort((a, b) => {
+            return a.createdAt - b.createdAt
+          })
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          return []
+        })
+        .finally(() => {
+          this.processing = false
+        })
     },
     submitForm() {
       this.$refs.ereaderNameInput.blur()
@@ -218,6 +226,10 @@ export default {
         this.newDevice.email = this.ereaderDevice.email
         this.newDevice.availabilityOption = this.ereaderDevice.availabilityOption || 'adminOrUp'
         this.newDevice.users = this.ereaderDevice.users || []
+
+        if (this.newDevice.availabilityOption === 'specificUsers' && !this.users.length) {
+          this.loadUsers()
+        }
       } else {
         this.newDevice.name = ''
         this.newDevice.email = ''

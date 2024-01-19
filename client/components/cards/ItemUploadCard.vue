@@ -21,16 +21,15 @@
           <div v-if="!isPodcast" class="flex items-end">
             <ui-text-input-with-label v-model.trim="itemData.author" :disabled="processing" :label="$strings.LabelAuthor" />
             <ui-tooltip :text="$strings.LabelUploaderItemFetchMetadataHelp">
-              <div class="ml-2 mb-1 w-8 h-8 bg-bg border border-white border-opacity-10 flex items-center justify-center rounded-full hover:bg-primary cursor-pointer" @click="fetchMetadata">
+              <div
+                class="ml-2 mb-1 w-8 h-8 bg-bg border border-white border-opacity-10 flex items-center justify-center rounded-full hover:bg-primary cursor-pointer"
+                @click="fetchMetadata">
                 <span class="text-base text-white text-opacity-80 font-mono material-icons">sync</span>
               </div>
             </ui-tooltip>
           </div>
           <div v-else class="w-full">
-            <p class="px-1 text-sm font-semibold">
-              {{ $strings.LabelDirectory }}
-              <em class="font-normal text-xs pl-2">(auto)</em>
-            </p>
+            <p class="px-1 text-sm font-semibold">{{ $strings.LabelDirectory }} <em class="font-normal text-xs pl-2">(auto)</em></p>
             <ui-text-input :value="directory" disabled class="w-full font-mono text-xs" />
           </div>
         </div>
@@ -41,10 +40,7 @@
         </div>
         <div class="w-1/2 px-2">
           <div class="w-full">
-            <label class="px-1 text-sm font-semibold">
-              {{ $strings.LabelDirectory }}
-              <em class="font-normal text-xs pl-2">(auto)</em>
-            </label>
+            <label class="px-1 text-sm font-semibold">{{ $strings.LabelDirectory }} <em class="font-normal text-xs pl-2">(auto)</em></label>
             <ui-text-input :value="directory" disabled class="w-full font-mono text-xs h-10" />
           </div>
         </div>
@@ -55,10 +51,10 @@
       <tables-uploaded-files-table v-if="item.ignoredFiles.length" :title="$strings.HeaderIgnoredFiles" :files="item.ignoredFiles" />
     </template>
     <widgets-alert v-if="uploadSuccess" type="success">
-      <p class="text-base">"{{ itemData.title }}" {{ $strings.MessageUploaderItemSuccess }}</p>
+      <p class="text-base">{{ $strings.MessageUploaderItemSuccess }}</p>
     </widgets-alert>
     <widgets-alert v-if="uploadFailed" type="error">
-      <p class="text-base">"{{ itemData.title }}" {{ $strings.MessageUploaderItemFailed }}</p>
+      <p class="text-base">{{ $strings.MessageUploaderItemFailed }}</p>
     </widgets-alert>
 
     <div v-if="isNonInteractable" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-20">
@@ -74,7 +70,7 @@ export default {
   props: {
     item: {
       type: Object,
-      default: () => {}
+      default: () => { }
     },
     mediaType: String,
     processing: Boolean,
@@ -103,7 +99,7 @@ export default {
       if (this.isPodcast) return this.itemData.title
 
       const outputPathParts = [this.itemData.author, this.itemData.series, this.itemData.title]
-      const cleanedOutputPathParts = outputPathParts.filter(Boolean).map((part) => this.$sanitizeFilename(part))
+      const cleanedOutputPathParts = outputPathParts.filter(Boolean).map(part => this.$sanitizeFilename(part))
 
       return Path.join(...cleanedOutputPathParts)
     },

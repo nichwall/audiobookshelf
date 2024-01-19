@@ -1,12 +1,10 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
     <app-book-shelf-toolbar page="authors" is-home :authors="authors" />
-    <div id="bookshelf" class="w-full h-full p-8e overflow-y-auto" :style="{ fontSize: sizeMultiplier + 'rem' }">
-      <!-- Cover size widget -->
-      <widgets-cover-size-widget class="fixed right-4 z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
+    <div id="bookshelf" class="w-full h-full p-8 overflow-y-auto">
       <div class="flex flex-wrap justify-center">
-        <template v-for="author in authorsSorted">
-          <cards-author-card :key="author.id" :author="author" class="p-3e" @edit="editAuthor" />
+        <template v-for="author in authors">
+          <cards-author-card :key="author.id" :author="author" :width="160" :height="200" class="p-3" @edit="editAuthor" />
         </template>
       </div>
     </div>
@@ -38,9 +36,6 @@ export default {
     }
   },
   computed: {
-    sizeMultiplier() {
-      return this.$store.getters['user/getSizeMultiplier']
-    },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
     },
@@ -49,22 +44,6 @@ export default {
     },
     selectedAuthor() {
       return this.$store.state.globals.selectedAuthor
-    },
-    authorSortBy() {
-      return this.$store.getters['user/getUserSetting']('authorSortBy') || 'name'
-    },
-    authorSortDesc() {
-      return !!this.$store.getters['user/getUserSetting']('authorSortDesc')
-    },
-    authorsSorted() {
-      const sortProp = this.authorSortBy
-      const bDesc = this.authorSortDesc ? -1 : 1
-      return this.authors.sort((a, b) => {
-        if (typeof a[sortProp] === 'number' && typeof b[sortProp] === 'number') {
-          return a[sortProp] > b[sortProp] ? bDesc : -bDesc
-        }
-        return a[sortProp].localeCompare(b[sortProp], undefined, { sensitivity: 'base' }) * bDesc
-      })
     }
   },
   methods: {
@@ -84,6 +63,9 @@ export default {
       }
     },
     authorUpdated(author) {
+      if (this.selectedAuthor && this.selectedAuthor.id === author.id) {
+        this.$store.commit('globals/setSelectedAuthor', author)
+      }
       this.authors = this.authors.map((au) => {
         if (au.id === author.id) {
           return author

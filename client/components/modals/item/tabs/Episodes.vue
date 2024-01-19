@@ -29,7 +29,7 @@
           <td class="text-center w-20 min-w-20">
             <p>{{ episode.episode }}</p>
           </td>
-          <td dir="auto">
+          <td>
             {{ episode.title }}
           </td>
           <td class="font-mono text-center">

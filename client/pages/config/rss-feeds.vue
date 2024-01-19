@@ -134,7 +134,7 @@ export default {
         return null
       })
       if (!data) {
-        this.$toast.error(this.$strings.ToastFailedToLoadData)
+        this.$toast.error('Failed to load RSS feeds')
         return
       }
       this.feeds = data.feeds

@@ -1,21 +1,19 @@
 <template>
   <div class="w-full">
-    <div class="flex items-center py-3e">
+    <div class="flex items-center py-3">
       <slot />
       <div class="flex-grow" />
-      <button cy-id="leftScrollButton" v-if="isScrollable" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollLeft ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollLeft">
-        <span class="material-icons" :style="{ fontSize: 1.5 + 'em' }">chevron_left</span>
+      <button v-if="isScrollable" class="w-8 h-8 mx-1 flex items-center justify-center rounded-full" :class="canScrollLeft ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollLeft">
+        <span class="material-icons text-2xl">chevron_left</span>
       </button>
-      <button cy-id="rightScrollButton" v-if="isScrollable" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollRight ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollRight">
-        <span class="material-icons" :style="{ fontSize: 1.5 + 'em' }">chevron_right</span>
+      <button v-if="isScrollable" class="w-8 h-8 mx-1 flex items-center justify-center rounded-full" :class="canScrollRight ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollRight">
+        <span class="material-icons text-2xl">chevron_right</span>
       </button>
     </div>
-    <div cy-id="slider" ref="slider" class="w-full overflow-y-hidden overflow-x-auto no-scroll" style="scroll-behavior: smooth" @scroll="scrolled">
-      <div class="flex space-x-4e">
+    <div ref="slider" class="w-full overflow-y-hidden overflow-x-auto no-scroll -mx-2" style="scroll-behavior: smooth" @scroll="scrolled">
+      <div class="flex" :style="{ height: height + 'px' }">
         <template v-for="(item, index) in items">
-          <div cy-id="item" ref="item" :key="itemKeyFunc(item)">
-            <component :is="componentName" :ref="itemRefFunc(item)" :index="index" :[itemPropName]="item" :bookshelf-view="bookshelfView" :continue-listening-shelf="continueListeningShelf" class="relative" @edit="editFunc" @editPodcast="editItem" @select="selectItem" @hook:updated="setScrollVars" />
-          </div>
+          <cards-lazy-book-card :key="item.id + '-' + shelfId" :ref="`slider-item-${item.id}`" :index="index" :book-mount="item" :height="cardHeight" :width="cardWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" :bookshelf-view="bookshelfView" :continue-listening-shelf="continueListeningShelf" class="relative mx-2" @edit="editItem" @select="selectItem" @hook:updated="setScrollVars" />
         </template>
       </div>
     </div>
@@ -29,107 +27,48 @@ export default {
       type: Array,
       default: () => []
     },
+    height: {
+      type: Number,
+      default: 192
+    },
     bookshelfView: {
       type: Number,
       default: 1
     },
-    shelfId: {
-      type: String,
-      default: ''
-    },
-    continueListeningShelf: {
-      type: Boolean,
-      default: false
-    },
-    type: {
-      type: String,
-      default: 'book'
-    }
+    shelfId: String,
+    continueListeningShelf: Boolean
   },
   data() {
     return {
       isScrollable: false,
       canScrollLeft: false,
       canScrollRight: false,
-      clientWidth: 0,
-      shelfOptionsByType: {
-        episode: {
-          component: 'cards-lazy-book-card',
-          itemPropName: 'book-mount',
-          itemIdFunc: (item) => item.recentEpisode.id
-        },
-        series: {
-          component: 'cards-lazy-series-card',
-          itemPropName: 'series-mount',
-          itemIdFunc: (item) => item.id
-        },
-        authors: {
-          component: 'cards-author-card',
-          itemPropName: 'author',
-          itemIdFunc: (item) => item.id
-        },
-        narrators: {
-          component: 'cards-narrator-card',
-          itemPropName: 'narrator',
-          itemIdFunc: (item) => item.name
-        },
-        book: {
-          component: 'cards-lazy-book-card',
-          itemPropName: 'book-mount',
-          itemIdFunc: (item) => item.id
-        },
-        podcast: {
-          component: 'cards-lazy-book-card',
-          itemPropName: 'book-mount',
-          itemIdFunc: (item) => item.id
-        }
-      }
+      clientWidth: 0
     }
   },
   computed: {
+    bookCoverAspectRatio() {
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
+    },
+    cardScaleMulitiplier() {
+      return this.height / 192
+    },
+    cardHeight() {
+      return this.height - 40 * this.cardScaleMulitiplier
+    },
+    cardWidth() {
+      return this.cardHeight / this.bookCoverAspectRatio
+    },
+    booksPerPage() {
+      return Math.floor(this.clientWidth / (this.cardWidth + 16))
+    },
     isSelectionMode() {
       return this.$store.getters['globals/getIsBatchSelectingMediaItems']
-    },
-    options() {
-      return this.shelfOptionsByType[this.type]
-    },
-    itemIdFunc() {
-      return this.options.itemIdFunc
-    },
-    itemKeyFunc() {
-      return (item) => this.itemIdFunc(item) + this.shelfId
-    },
-    itemRefFunc() {
-      return (item) => `slider-item-${this.itemIdFunc(item)}`
-    },
-    componentName() {
-      return this.options.component
-    },
-    itemPropName() {
-      return this.options.itemPropName
-    },
-    editFunc() {
-      switch (this.type) {
-        case 'episode':
-          return this.editEpisode
-        case 'authors':
-          return this.editAuthor
-        default:
-          return this.editItem
-      }
     }
   },
   methods: {
     clearSelectedEntities() {
       this.updateSelectionMode(false)
-    },
-    editEpisode({ libraryItem, episode }) {
-      this.$store.commit('setSelectedLibraryItem', libraryItem)
-      this.$store.commit('globals/setSelectedEpisode', episode)
-      this.$store.commit('globals/setShowEditPodcastEpisodeModal', true)
-    },
-    editAuthor(author) {
-      this.$store.commit('globals/showEditAuthorModal', author)
     },
     editItem(libraryItem) {
       var itemIds = this.items.map((e) => e.id)
@@ -144,8 +83,9 @@ export default {
     },
     updateSelectionMode(val) {
       const selectedMediaItems = this.$store.state.globals.selectedMediaItems
+
       this.items.forEach((item) => {
-        let component = this.$refs[this.itemRefFunc(item)]
+        let component = this.$refs[`slider-item-${item.id}`]
         if (!component || !component.length) return
         component = component[0]
         component.setSelectionMode(val)
@@ -159,7 +99,7 @@ export default {
       if (!this.canScrollRight) return
       const slider = this.$refs.slider
       if (!slider) return
-      const scrollAmount = this.clientWidth
+      const scrollAmount = this.booksPerPage * this.cardWidth
       const maxScrollLeft = slider.scrollWidth - slider.clientWidth
 
       const newScrollLeft = Math.min(maxScrollLeft, slider.scrollLeft + scrollAmount)
@@ -170,7 +110,7 @@ export default {
       const slider = this.$refs.slider
       if (!slider) return
 
-      const scrollAmount = this.clientWidth
+      const scrollAmount = this.booksPerPage * this.cardWidth
 
       const newScrollLeft = Math.max(0, slider.scrollLeft - scrollAmount)
       slider.scrollLeft = newScrollLeft
@@ -179,11 +119,11 @@ export default {
       const slider = this.$refs.slider
       if (!slider) return
       const { scrollLeft, scrollWidth, clientWidth } = slider
-      const scrollRemaining = Math.abs(scrollLeft + clientWidth - scrollWidth)
+      const scrollPercent = (scrollLeft + clientWidth) / scrollWidth
 
       this.clientWidth = clientWidth
       this.isScrollable = scrollWidth > clientWidth
-      this.canScrollRight = scrollRemaining >= 1
+      this.canScrollRight = scrollPercent < 1
       this.canScrollLeft = scrollLeft > 0
     }
   },
@@ -191,17 +131,12 @@ export default {
     this.setScrollVars()
   },
   mounted() {
-    this.setScrollVars()
-    if (['book', 'podcast', 'episode'].includes(this.type)) {
-      this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
-      this.$eventBus.$on('item-selected', this.itemSelectedEvt)
-    }
+    this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
+    this.$eventBus.$on('item-selected', this.itemSelectedEvt)
   },
   beforeDestroy() {
-    if (['book', 'podcast', 'episode'].includes(this.type)) {
-      this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
-      this.$eventBus.$off('item-selected', this.itemSelectedEvt)
-    }
+    this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
+    this.$eventBus.$off('item-selected', this.itemSelectedEvt)
   }
 }
 </script>

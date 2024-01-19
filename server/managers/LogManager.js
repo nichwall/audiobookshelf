@@ -1,34 +1,19 @@
 const Path = require('path')
 const fs = require('../libs/fsExtra')
 
-const Logger = require('../Logger')
 const DailyLog = require('../objects/DailyLog')
 
-const { LogLevel } = require('../utils/constants')
+const Logger = require('../Logger')
 
 const TAG = '[LogManager]'
-
-/**
- * @typedef LogObject
- * @property {string} timestamp
- * @property {string} source
- * @property {string} message
- * @property {string} levelName
- * @property {number} level
- */
 
 class LogManager {
   constructor() {
     this.DailyLogPath = Path.posix.join(global.MetadataPath, 'logs', 'daily')
     this.ScanLogPath = Path.posix.join(global.MetadataPath, 'logs', 'scans')
 
-    /** @type {DailyLog} */
     this.currentDailyLog = null
-
-    /** @type {LogObject[]} */
     this.dailyLogBuffer = []
-
-    /** @type {string[]} */
     this.dailyLogFiles = []
   }
 
@@ -41,12 +26,12 @@ class LogManager {
     await fs.ensureDir(this.ScanLogPath)
   }
 
-  /**
-   * 1. Ensure log directories exist
-   * 2. Load daily log files
-   * 3. Remove old daily log files
-   * 4. Create/set current daily log file
-   */
+  async ensureScanLogDir() {
+    if (!(await fs.pathExists(this.ScanLogPath))) {
+      await fs.mkdir(this.ScanLogPath)
+    }
+  }
+
   async init() {
     await this.ensureLogDirs()
 
@@ -61,11 +46,11 @@ class LogManager {
       }
     }
 
-    // set current daily log file or create if does not exist
     const currentDailyLogFilename = DailyLog.getCurrentDailyLogFilename()
     Logger.info(TAG, `Init current daily log filename: ${currentDailyLogFilename}`)
 
-    this.currentDailyLog = new DailyLog(this.DailyLogPath)
+    this.currentDailyLog = new DailyLog()
+    this.currentDailyLog.setData({ dailyLogDirPath: this.DailyLogPath })
 
     if (this.dailyLogFiles.includes(currentDailyLogFilename)) {
       Logger.debug(TAG, `Daily log file already exists - set in Logger`)
@@ -74,7 +59,7 @@ class LogManager {
       this.dailyLogFiles.push(this.currentDailyLog.filename)
     }
 
-    // Log buffered daily logs
+    // Log buffered Logs
     if (this.dailyLogBuffer.length) {
       this.dailyLogBuffer.forEach((logObj) => {
         this.currentDailyLog.appendLog(logObj)
@@ -83,12 +68,9 @@ class LogManager {
     }
   }
 
-  /**
-   * Load all daily log filenames in /metadata/logs/daily
-   */
   async scanLogFiles() {
     const dailyFiles = await fs.readdir(this.DailyLogPath)
-    if (dailyFiles?.length) {
+    if (dailyFiles && dailyFiles.length) {
       dailyFiles.forEach((logFile) => {
         if (Path.extname(logFile) === '.txt') {
           Logger.debug('Daily Log file found', logFile)
@@ -101,38 +83,30 @@ class LogManager {
     this.dailyLogFiles.sort()
   }
 
-  /**
-   * 
-   * @param {string} filename 
-   */
+  async removeOldestLog() {
+    if (!this.dailyLogFiles.length) return
+    const oldestLog = this.dailyLogFiles[0]
+    return this.removeLogFile(oldestLog)
+  }
+
   async removeLogFile(filename) {
     const fullPath = Path.join(this.DailyLogPath, filename)
     const exists = await fs.pathExists(fullPath)
     if (!exists) {
       Logger.error(TAG, 'Invalid log dne ' + fullPath)
-      this.dailyLogFiles = this.dailyLogFiles.filter(dlf => dlf !== filename)
+      this.dailyLogFiles = this.dailyLogFiles.filter(dlf => dlf.filename !== filename)
     } else {
       try {
         await fs.unlink(fullPath)
         Logger.info(TAG, 'Removed daily log: ' + filename)
-        this.dailyLogFiles = this.dailyLogFiles.filter(dlf => dlf !== filename)
+        this.dailyLogFiles = this.dailyLogFiles.filter(dlf => dlf.filename !== filename)
       } catch (error) {
         Logger.error(TAG, 'Failed to unlink log file ' + fullPath)
       }
     }
   }
 
-  /**
-   * 
-   * @param {LogObject} logObj 
-   */
-  async logToFile(logObj) {
-    // Fatal crashes get logged to a separate file
-    if (logObj.level === LogLevel.FATAL) {
-      await this.logCrashToFile(logObj)
-    }
-
-    // Buffer when logging before daily logs have been initialized
+  logToFile(logObj) {
     if (!this.currentDailyLog) {
       this.dailyLogBuffer.push(logObj)
       return
@@ -140,39 +114,25 @@ class LogManager {
 
     // Check log rolls to next day
     if (this.currentDailyLog.id !== DailyLog.getCurrentDateString()) {
-      this.currentDailyLog = new DailyLog(this.DailyLogPath)
+      const newDailyLog = new DailyLog()
+      newDailyLog.setData({ dailyLogDirPath: this.DailyLogPath })
+      this.currentDailyLog = newDailyLog
       if (this.dailyLogFiles.length > this.loggerDailyLogsToKeep) {
-        // Remove oldest log
-        this.removeLogFile(this.dailyLogFiles[0])
+        this.removeOldestLog()
       }
     }
 
     // Append log line to log file
-    return this.currentDailyLog.appendLog(logObj)
+    this.currentDailyLog.appendLog(logObj)
   }
 
-  /**
-   * 
-   * @param {LogObject} logObj 
-   */
-  async logCrashToFile(logObj) {
-    const line = JSON.stringify(logObj) + '\n'
+  socketRequestDailyLogs(socket) {
+    if (!this.currentDailyLog) {
+      return
+    }
 
-    const logsDir = Path.join(global.MetadataPath, 'logs')
-    await fs.ensureDir(logsDir)
-    const crashLogPath = Path.join(logsDir, 'crash_logs.txt')
-    return fs.writeFile(crashLogPath, line, { flag: "a+" }).catch((error) => {
-      console.log('[LogManager] Appended crash log', error)
-    })
-  }
-
-  /**
-   * Most recent 5000 daily logs
-   * 
-   * @returns {string}
-   */
-  getMostRecentCurrentDailyLogs() {
-    return this.currentDailyLog?.logs.slice(-5000) || ''
+    const lastLogs = this.currentDailyLog.logs.slice(-5000)
+    socket.emit('daily_logs', lastLogs)
   }
 }
 module.exports = LogManager

@@ -57,6 +57,7 @@ export default {
   },
   watch: {
     duration: {
+      immediate: true,
       handler() {
         this.setChapterTicks()
       }
@@ -204,14 +205,10 @@ export default {
     },
     windowResize() {
       this.setTrackWidth()
-      this.setChapterTicks()
-      this.updatePlayedTrackWidth()
-      this.updateBufferTrack()
     }
   },
   mounted() {
     this.setTrackWidth()
-    this.setChapterTicks()
     window.addEventListener('resize', this.windowResize)
   },
   beforeDestroy() {

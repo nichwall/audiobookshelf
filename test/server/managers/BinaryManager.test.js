@@ -15,7 +15,6 @@ describe('BinaryManager', () => {
   describe('init', () => {
     let findStub
     let installStub
-    let removeOldBinariesStub
     let errorStub
     let exitStub
 
@@ -23,7 +22,6 @@ describe('BinaryManager', () => {
       binaryManager = new BinaryManager()
       findStub = sinon.stub(binaryManager, 'findRequiredBinaries')
       installStub = sinon.stub(binaryManager, 'install')
-      removeOldBinariesStub = sinon.stub(binaryManager, 'removeOldBinaries')
       errorStub = sinon.stub(console, 'error')
       exitStub = sinon.stub(process, 'exit')
     })
@@ -31,7 +29,6 @@ describe('BinaryManager', () => {
     afterEach(() => {
       findStub.restore()
       installStub.restore()
-      removeOldBinariesStub.restore()
       errorStub.restore()
       exitStub.restore()
     })
@@ -42,7 +39,6 @@ describe('BinaryManager', () => {
       await binaryManager.init()
 
       expect(installStub.called).to.be.false
-      expect(removeOldBinariesStub.called).to.be.false
       expect(findStub.calledOnce).to.be.true
       expect(errorStub.called).to.be.false
       expect(exitStub.called).to.be.false
@@ -58,7 +54,6 @@ describe('BinaryManager', () => {
 
       expect(findStub.calledTwice).to.be.true
       expect(installStub.calledOnce).to.be.true
-      expect(removeOldBinariesStub.calledOnce).to.be.true
       expect(errorStub.called).to.be.false
       expect(exitStub.called).to.be.false
     })
@@ -73,7 +68,6 @@ describe('BinaryManager', () => {
 
       expect(findStub.calledTwice).to.be.true
       expect(installStub.calledOnce).to.be.true
-      expect(removeOldBinariesStub.calledOnce).to.be.true
       expect(errorStub.calledOnce).to.be.true
       expect(exitStub.calledOnce).to.be.true
       expect(exitStub.calledWith(1)).to.be.true
@@ -177,7 +171,7 @@ describe('BinaryManager', () => {
 
 describe('findBinary', () => {
   let binaryManager
-  let isBinaryGoodStub
+  let fsPathExistsStub
   let whichSyncStub
   let mainInstallPath
   let altInstallPath
@@ -191,7 +185,7 @@ describe('findBinary', () => {
 
   beforeEach(() => {
     binaryManager = new BinaryManager()
-    isBinaryGoodStub = sinon.stub(binaryManager, 'isBinaryGood')
+    fsPathExistsStub = sinon.stub(fs, 'pathExists')
     whichSyncStub = sinon.stub(which, 'sync')
     binaryManager.mainInstallPath = '/path/to/main/install'
     mainInstallPath = path.join(binaryManager.mainInstallPath, executable)
@@ -200,183 +194,71 @@ describe('findBinary', () => {
   })
 
   afterEach(() => {
-    isBinaryGoodStub.restore()
+    fsPathExistsStub.restore()
     whichSyncStub.restore()
   })
-  
-  it('should return the defaultPath if it exists and is a good binary', async () => {
+
+  it('should return defaultPath if it exists', async () => {
     process.env[envVariable] = defaultPath
-    isBinaryGoodStub.withArgs(defaultPath).resolves(true)
-  
+    fsPathExistsStub.withArgs(defaultPath).resolves(true)
+
     const result = await binaryManager.findBinary(name, envVariable)
-  
-    expect(result).to.equal(defaultPath)    
-    expect(isBinaryGoodStub.calledOnce).to.be.true
-    expect(isBinaryGoodStub.calledWith(defaultPath)).to.be.true
+
+    expect(result).to.equal(defaultPath)
+    expect(fsPathExistsStub.calledOnceWith(defaultPath)).to.be.true
+    expect(whichSyncStub.notCalled).to.be.true
   })
-  
-  it('should return the whichPath if it exists and is a good binary', async () => {
+
+  it('should return whichPath if it exists', async () => {
     delete process.env[envVariable]
-    isBinaryGoodStub.withArgs(undefined).resolves(false)
-    isBinaryGoodStub.withArgs(whichPath).resolves(true)
     whichSyncStub.returns(whichPath)
-  
+
     const result = await binaryManager.findBinary(name, envVariable)
-  
+
     expect(result).to.equal(whichPath)
-    expect(isBinaryGoodStub.calledTwice).to.be.true
-    expect(isBinaryGoodStub.calledWith(undefined)).to.be.true
-    expect(isBinaryGoodStub.calledWith(whichPath)).to.be.true
+    expect(fsPathExistsStub.notCalled).to.be.true
+    expect(whichSyncStub.calledOnce).to.be.true
   })
-  
-  it('should return the mainInstallPath if it exists and is a good binary', async () => {
+
+  it('should return mainInstallPath if it exists', async () => {
     delete process.env[envVariable]
-    isBinaryGoodStub.withArgs(undefined).resolves(false)
-    isBinaryGoodStub.withArgs(null).resolves(false)
-    isBinaryGoodStub.withArgs(mainInstallPath).resolves(true)
     whichSyncStub.returns(null)
-  
+    fsPathExistsStub.withArgs(mainInstallPath).resolves(true)
+
     const result = await binaryManager.findBinary(name, envVariable)
-  
+
     expect(result).to.equal(mainInstallPath)
-    expect(isBinaryGoodStub.callCount).to.be.equal(3)
-    expect(isBinaryGoodStub.calledWith(undefined)).to.be.true
-    expect(isBinaryGoodStub.calledWith(null)).to.be.true
-    expect(isBinaryGoodStub.calledWith(mainInstallPath)).to.be.true
+    expect(whichSyncStub.calledOnce).to.be.true
+    expect(fsPathExistsStub.calledOnceWith(mainInstallPath)).to.be.true
   })
-  
-  it('should return the altInstallPath if it exists and is a good binary', async () => {
+
+  it('should return altInstallPath if it exists', async () => {
     delete process.env[envVariable]
-    isBinaryGoodStub.withArgs(undefined).resolves(false)
-    isBinaryGoodStub.withArgs(null).resolves(false)
-    isBinaryGoodStub.withArgs(mainInstallPath).resolves(false)
-    isBinaryGoodStub.withArgs(altInstallPath).resolves(true)
     whichSyncStub.returns(null)
-  
+    fsPathExistsStub.withArgs(mainInstallPath).resolves(false)
+    fsPathExistsStub.withArgs(altInstallPath).resolves(true)
+
     const result = await binaryManager.findBinary(name, envVariable)
-  
+
     expect(result).to.equal(altInstallPath)
-    expect(isBinaryGoodStub.callCount).to.be.equal(4)
-    expect(isBinaryGoodStub.calledWith(undefined)).to.be.true
-    expect(isBinaryGoodStub.calledWith(null)).to.be.true
-    expect(isBinaryGoodStub.calledWith(mainInstallPath)).to.be.true
-    expect(isBinaryGoodStub.calledWith(altInstallPath)).to.be.true
+    expect(whichSyncStub.calledOnce).to.be.true
+    expect(fsPathExistsStub.calledTwice).to.be.true
+    expect(fsPathExistsStub.calledWith(mainInstallPath)).to.be.true
+    expect(fsPathExistsStub.calledWith(altInstallPath)).to.be.true
   })
-  
-  it('should return null if no good binary is found', async () => {
+
+  it('should return null if binary is not found', async () => {
     delete process.env[envVariable]
-    isBinaryGoodStub.withArgs(undefined).resolves(false)
-    isBinaryGoodStub.withArgs(null).resolves(false)
-    isBinaryGoodStub.withArgs(mainInstallPath).resolves(false)
-    isBinaryGoodStub.withArgs(altInstallPath).resolves(false)
     whichSyncStub.returns(null)
-  
+    fsPathExistsStub.withArgs(mainInstallPath).resolves(false)
+    fsPathExistsStub.withArgs(altInstallPath).resolves(false)
+
     const result = await binaryManager.findBinary(name, envVariable)
-  
+
     expect(result).to.be.null
-    expect(isBinaryGoodStub.callCount).to.be.equal(4)
-    expect(isBinaryGoodStub.calledWith(undefined)).to.be.true
-    expect(isBinaryGoodStub.calledWith(null)).to.be.true
-    expect(isBinaryGoodStub.calledWith(mainInstallPath)).to.be.true
-    expect(isBinaryGoodStub.calledWith(altInstallPath)).to.be.true
-  })  
-})
-
-describe('isBinaryGood', () => {
-  let binaryManager
-  let fsPathExistsStub
-  let execStub
-  let loggerInfoStub
-  let loggerErrorStub
-
-  const binaryPath = '/path/to/binary'
-  const execCommand = '"' + binaryPath + '"' + ' -version'
-  const goodVersions = ['5.1', '6']
-
-  beforeEach(() => {
-    binaryManager = new BinaryManager()
-    fsPathExistsStub = sinon.stub(fs, 'pathExists')
-    execStub = sinon.stub(binaryManager, 'exec')
-  })
-
-  afterEach(() => {
-    fsPathExistsStub.restore()
-    execStub.restore()
-  })
-
-  it('should return false if binaryPath is falsy', async () => {
-    fsPathExistsStub.resolves(true)
-
-    const result = await binaryManager.isBinaryGood(null, goodVersions)
-
-    expect(result).to.be.false
-    expect(fsPathExistsStub.called).to.be.false
-    expect(execStub.called).to.be.false
-  })
-
-  it('should return false if binaryPath does not exist', async () => {
-    fsPathExistsStub.resolves(false)
-
-    const result = await binaryManager.isBinaryGood(binaryPath, goodVersions)
-
-    expect(result).to.be.false
-    expect(fsPathExistsStub.calledOnce).to.be.true
-    expect(fsPathExistsStub.calledWith(binaryPath)).to.be.true
-    expect(execStub.called).to.be.false
-  })
-
-  it('should return false if failed to check version of binary', async () => {
-    fsPathExistsStub.resolves(true)
-    execStub.rejects(new Error('Failed to execute command'))
-
-    const result = await binaryManager.isBinaryGood(binaryPath, goodVersions)
-
-    expect(result).to.be.false
-    expect(fsPathExistsStub.calledOnce).to.be.true
-    expect(fsPathExistsStub.calledWith(binaryPath)).to.be.true
-    expect(execStub.calledOnce).to.be.true
-    expect(execStub.calledWith(execCommand)).to.be.true
-  })
-
-  it('should return false if version is not found', async () => {
-    const stdout = 'Some output without version'
-    fsPathExistsStub.resolves(true)
-    execStub.resolves({ stdout })
-
-    const result = await binaryManager.isBinaryGood(binaryPath, goodVersions)
-
-    expect(result).to.be.false
-    expect(fsPathExistsStub.calledOnce).to.be.true
-    expect(fsPathExistsStub.calledWith(binaryPath)).to.be.true
-    expect(execStub.calledOnce).to.be.true
-    expect(execStub.calledWith(execCommand)).to.be.true
-  })
-
-  it('should return false if version is found but does not match a good version', async () => {
-    const stdout = 'version 1.2.3'
-    fsPathExistsStub.resolves(true)
-    execStub.resolves({ stdout })
-
-    const result = await binaryManager.isBinaryGood(binaryPath, goodVersions)
-
-    expect(result).to.be.false
-    expect(fsPathExistsStub.calledOnce).to.be.true
-    expect(fsPathExistsStub.calledWith(binaryPath)).to.be.true
-    expect(execStub.calledOnce).to.be.true
-    expect(execStub.calledWith(execCommand)).to.be.true
-  })
-
-  it('should return true if version is found and matches a good version', async () => {
-    const stdout = 'version 6.1.2'
-    fsPathExistsStub.resolves(true)
-    execStub.resolves({ stdout })
-
-    const result = await binaryManager.isBinaryGood(binaryPath, goodVersions)
-
-    expect(result).to.be.true
-    expect(fsPathExistsStub.calledOnce).to.be.true
-    expect(fsPathExistsStub.calledWith(binaryPath)).to.be.true
-    expect(execStub.calledOnce).to.be.true
-    expect(execStub.calledWith(execCommand)).to.be.true
+    expect(whichSyncStub.calledOnce).to.be.true
+    expect(fsPathExistsStub.calledTwice).to.be.true
+    expect(fsPathExistsStub.calledWith(mainInstallPath)).to.be.true
+    expect(fsPathExistsStub.calledWith(altInstallPath)).to.be.true
   })
 })

@@ -134,13 +134,10 @@ class LibraryScan {
   }
 
   async saveLog() {
-    const scanLogDir = Path.join(global.MetadataPath, 'logs', 'scans')
+    await Logger.logManager.ensureScanLogDir()
 
-    if (!(await fs.pathExists(scanLogDir))) {
-      await fs.mkdir(scanLogDir)
-    }
-
-    const outputPath = Path.join(scanLogDir, this.logFilename)
+    const logDir = Path.join(global.MetadataPath, 'logs', 'scans')
+    const outputPath = Path.join(logDir, this.logFilename)
     const logLines = [JSON.stringify(this.toJSON())]
     this.logs.forEach(l => {
       logLines.push(JSON.stringify(l))

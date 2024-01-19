@@ -9,13 +9,13 @@ const CacheManager = require('../managers/CacheManager')
 const CoverManager = require('../managers/CoverManager')
 const AuthorFinder = require('../finders/AuthorFinder')
 
-const { reqSupportsWebp, isValidASIN } = require('../utils/index')
+const { reqSupportsWebp } = require('../utils/index')
 
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
 class AuthorController {
-  constructor() {}
+  constructor() { }
 
   async findOne(req, res) {
     const include = (req.query.include || '').split(',')
@@ -32,6 +32,7 @@ class AuthorController {
         authorJson.libraryItems.forEach((li) => {
           if (li.media.metadata.series) {
             li.media.metadata.series.forEach((series) => {
+
               const itemWithSeries = li.toJSONMinified()
               itemWithSeries.media.metadata.series = series
 
@@ -49,24 +50,19 @@ class AuthorController {
         })
         // Sort series items
         for (const key in seriesMap) {
-          seriesMap[key].items = naturalSort(seriesMap[key].items).asc((li) => li.media.metadata.series.sequence)
+          seriesMap[key].items = naturalSort(seriesMap[key].items).asc(li => li.media.metadata.series.sequence)
         }
 
         authorJson.series = Object.values(seriesMap)
       }
 
       // Minify library items
-      authorJson.libraryItems = authorJson.libraryItems.map((li) => li.toJSONMinified())
+      authorJson.libraryItems = authorJson.libraryItems.map(li => li.toJSONMinified())
     }
 
     return res.json(authorJson)
   }
 
-  /**
-   *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
-   */
   async update(req, res) {
     const payload = req.body
     let hasUpdated = false
@@ -93,37 +89,19 @@ class AuthorController {
       existingAuthor = author?.getOldAuthor()
     }
     if (existingAuthor) {
-      Logger.info(`[AuthorController] Merging author "${req.author.name}" with "${existingAuthor.name}"`)
       const bookAuthorsToCreate = []
-      const allItemsWithAuthor = await Database.authorModel.getAllLibraryItemsForAuthor(req.author.id)
-
-      const oldLibraryItems = []
-      allItemsWithAuthor.forEach((libraryItem) => {
-        // Replace old author with merging author for each book
-        libraryItem.media.authors = libraryItem.media.authors.filter((au) => au.id !== req.author.id)
-        libraryItem.media.authors.push({
-          id: existingAuthor.id,
-          name: existingAuthor.name
-        })
-
-        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-        oldLibraryItems.push(oldLibraryItem)
-
+      const itemsWithAuthor = await Database.libraryItemModel.getForAuthor(req.author)
+      itemsWithAuthor.forEach(libraryItem => { // Replace old author with merging author for each book
+        libraryItem.media.metadata.replaceAuthor(req.author, existingAuthor)
         bookAuthorsToCreate.push({
           bookId: libraryItem.media.id,
           authorId: existingAuthor.id
         })
       })
-      if (oldLibraryItems.length) {
+      if (itemsWithAuthor.length) {
         await Database.removeBulkBookAuthors(req.author.id) // Remove all old BookAuthor
         await Database.createBulkBookAuthors(bookAuthorsToCreate) // Create all new BookAuthor
-        for (const libraryItem of allItemsWithAuthor) {
-          await libraryItem.saveMetadataFile()
-        }
-        SocketAuthority.emitter(
-          'items_updated',
-          oldLibraryItems.map((li) => li.toJSONExpanded())
-        )
+        SocketAuthority.emitter('items_updated', itemsWithAuthor.map(li => li.toJSONExpanded()))
       }
 
       // Remove old author
@@ -133,15 +111,14 @@ class AuthorController {
       Database.removeAuthorFromFilterData(req.author.libraryId, req.author.id)
 
       // Send updated num books for merged author
-      const numBooks = await Database.bookAuthorModel.getCountForAuthor(existingAuthor.id)
+      const numBooks = (await Database.libraryItemModel.getForAuthor(existingAuthor)).length
       SocketAuthority.emitter('author_updated', existingAuthor.toJSONExpanded(numBooks))
 
       res.json({
         author: existingAuthor.toJSON(),
         merged: true
       })
-    } else {
-      // Regular author update
+    } else { // Regular author update
       if (req.author.update(payload)) {
         hasUpdated = true
       }
@@ -149,38 +126,18 @@ class AuthorController {
       if (hasUpdated) {
         req.author.updatedAt = Date.now()
 
-        let numBooksForAuthor = 0
-        if (authorNameUpdate) {
-          const allItemsWithAuthor = await Database.authorModel.getAllLibraryItemsForAuthor(req.author.id)
-
-          numBooksForAuthor = allItemsWithAuthor.length
-          const oldLibraryItems = []
-          // Update author name on all books
-          for (const libraryItem of allItemsWithAuthor) {
-            libraryItem.media.authors = libraryItem.media.authors.map((au) => {
-              if (au.id === req.author.id) {
-                au.name = req.author.name
-              }
-              return au
-            })
-            const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-            oldLibraryItems.push(oldLibraryItem)
-
-            await libraryItem.saveMetadataFile()
+        const itemsWithAuthor = await Database.libraryItemModel.getForAuthor(req.author)
+        if (authorNameUpdate) { // Update author name on all books
+          itemsWithAuthor.forEach(libraryItem => {
+            libraryItem.media.metadata.updateAuthor(req.author)
+          })
+          if (itemsWithAuthor.length) {
+            SocketAuthority.emitter('items_updated', itemsWithAuthor.map(li => li.toJSONExpanded()))
           }
-
-          if (oldLibraryItems.length) {
-            SocketAuthority.emitter(
-              'items_updated',
-              oldLibraryItems.map((li) => li.toJSONExpanded())
-            )
-          }
-        } else {
-          numBooksForAuthor = await Database.bookAuthorModel.getCountForAuthor(req.author.id)
         }
 
         await Database.updateAuthor(req.author)
-        SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooksForAuthor))
+        SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(itemsWithAuthor.length))
       }
 
       res.json({
@@ -193,9 +150,9 @@ class AuthorController {
   /**
    * DELETE: /api/authors/:id
    * Remove author from all books and delete
-   *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async delete(req, res) {
     Logger.info(`[AuthorController] Removing author "${req.author.name}"`)
@@ -217,9 +174,9 @@ class AuthorController {
   /**
    * POST: /api/authors/:id/image
    * Upload author image from web URL
-   *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async uploadImage(req, res) {
     if (!req.user.canUpload) {
@@ -249,10 +206,9 @@ class AuthorController {
     }
 
     req.author.imagePath = result.path
-    req.author.updatedAt = Date.now()
     await Database.authorModel.updateFromOld(req.author)
 
-    const numBooks = await Database.bookAuthorModel.getCountForAuthor(req.author.id)
+    const numBooks = (await Database.libraryItemModel.getForAuthor(req.author)).length
     SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
     res.json({
       author: req.author.toJSON()
@@ -262,9 +218,9 @@ class AuthorController {
   /**
    * DELETE: /api/authors/:id/image
    * Remove author image & delete image file
-   *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async deleteImage(req, res) {
     if (!req.author.imagePath) {
@@ -277,7 +233,7 @@ class AuthorController {
     req.author.imagePath = null
     await Database.authorModel.updateFromOld(req.author)
 
-    const numBooks = await Database.bookAuthorModel.getCountForAuthor(req.author.id)
+    const numBooks = (await Database.libraryItemModel.getForAuthor(req.author)).length
     SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
     res.json({
       author: req.author.toJSON()
@@ -287,7 +243,7 @@ class AuthorController {
   async match(req, res) {
     let authorData = null
     const region = req.body.region || 'us'
-    if (req.body.asin && isValidASIN(req.body.asin.toUpperCase?.())) {
+    if (req.body.asin) {
       authorData = await AuthorFinder.findAuthorByASIN(req.body.asin, region)
     } else {
       authorData = await AuthorFinder.findAuthorByName(req.body.q, region)
@@ -324,7 +280,7 @@ class AuthorController {
 
       await Database.updateAuthor(req.author)
 
-      const numBooks = await Database.bookAuthorModel.getCountForAuthor(req.author.id)
+      const numBooks = (await Database.libraryItemModel.getForAuthor(req.author)).length
       SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
     }
 
@@ -336,14 +292,10 @@ class AuthorController {
 
   // GET api/authors/:id/image
   async getImage(req, res) {
-    const {
-      query: { width, height, format, raw },
-      author
-    } = req
+    const { query: { width, height, format, raw }, author } = req
 
-    if (raw) {
-      // any value
-      if (!author.imagePath || !(await fs.pathExists(author.imagePath))) {
+    if (raw) { // any value
+      if (!author.imagePath || !await fs.pathExists(author.imagePath)) {
         return res.sendStatus(404)
       }
 

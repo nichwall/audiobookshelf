@@ -28,9 +28,7 @@ const SearchController = require('../controllers/SearchController')
 const CacheController = require('../controllers/CacheController')
 const ToolsController = require('../controllers/ToolsController')
 const RSSFeedController = require('../controllers/RSSFeedController')
-const CustomMetadataProviderController = require('../controllers/CustomMetadataProviderController')
 const MiscController = require('../controllers/MiscController')
-const ShareController = require('../controllers/ShareController')
 
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
@@ -41,7 +39,6 @@ class ApiRouter {
     this.auth = Server.auth
     this.playbackSessionManager = Server.playbackSessionManager
     this.abMergeManager = Server.abMergeManager
-    /** @type {import('../managers/BackupManager')} */
     this.backupManager = Server.backupManager
     /** @type {import('../Watcher')} */
     this.watcher = Server.watcher
@@ -132,7 +129,7 @@ class ApiRouter {
     this.router.get('/users/:id', UserController.middleware.bind(this), UserController.findOne.bind(this))
     this.router.patch('/users/:id', UserController.middleware.bind(this), UserController.update.bind(this))
     this.router.delete('/users/:id', UserController.middleware.bind(this), UserController.delete.bind(this))
-    this.router.patch('/users/:id/openid-unlink', UserController.middleware.bind(this), UserController.unlinkFromOpenID.bind(this))
+
     this.router.get('/users/:id/listening-sessions', UserController.middleware.bind(this), UserController.getListeningSessions.bind(this))
     this.router.get('/users/:id/listening-stats', UserController.middleware.bind(this), UserController.getListeningStats.bind(this))
 
@@ -168,7 +165,6 @@ class ApiRouter {
     //
     this.router.get('/me', MeController.getCurrentUser.bind(this))
     this.router.get('/me/listening-sessions', MeController.getListeningSessions.bind(this))
-    this.router.get('/me/item/listening-sessions/:libraryItemId/:episodeId?', MeController.getItemListeningSessions.bind(this))
     this.router.get('/me/listening-stats', MeController.getListeningStats.bind(this))
     this.router.get('/me/progress/:id/remove-from-continue-listening', MeController.removeItemFromContinueListening.bind(this))
     this.router.get('/me/progress/:id/:episodeId?', MeController.getMediaProgress.bind(this))
@@ -195,7 +191,6 @@ class ApiRouter {
     this.router.get('/backups/:id/download', BackupController.middleware.bind(this), BackupController.download.bind(this))
     this.router.get('/backups/:id/apply', BackupController.middleware.bind(this), BackupController.apply.bind(this))
     this.router.post('/backups/upload', BackupController.middleware.bind(this), BackupController.upload.bind(this))
-    this.router.patch('/backups/path', BackupController.middleware.bind(this), BackupController.updatePath.bind(this))
 
     //
     // File System Routes
@@ -305,19 +300,6 @@ class ApiRouter {
     this.router.post('/feeds/:id/close', RSSFeedController.middleware.bind(this), RSSFeedController.closeRSSFeed.bind(this))
 
     //
-    // Custom Metadata Provider routes
-    //
-    this.router.get('/custom-metadata-providers', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.getAll.bind(this))
-    this.router.post('/custom-metadata-providers', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.create.bind(this))
-    this.router.delete('/custom-metadata-providers/:id', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.delete.bind(this))
-
-    //
-    // Share routes
-    //
-    this.router.post('/share/mediaitem', ShareController.createMediaItemShare.bind(this))
-    this.router.delete('/share/mediaitem/:id', ShareController.deleteMediaItemShare.bind(this))
-
-    //
     // Misc Routes
     //
     this.router.post('/upload', MiscController.handleUpload.bind(this))
@@ -336,7 +318,6 @@ class ApiRouter {
     this.router.patch('/auth-settings', MiscController.updateAuthSettings.bind(this))
     this.router.post('/watcher/update', MiscController.updateWatchedPath.bind(this))
     this.router.get('/stats/year/:year', MiscController.getAdminStatsForYear.bind(this))
-    this.router.get('/logger-data', MiscController.getLoggerData.bind(this))
   }
 
   //
@@ -434,9 +415,9 @@ class ApiRouter {
   /**
    * Used when a series is removed from a book
    * Series is removed if it only has 1 book
-   *
+   * 
    * @param {string} bookId
-   * @param {string[]} seriesIds
+   * @param {string[]} seriesIds 
    */
   async checkRemoveEmptySeries(bookId, seriesIds) {
     if (!seriesIds?.length) return
@@ -464,7 +445,7 @@ class ApiRouter {
 
   /**
    * Remove an empty series & close an open RSS feed
-   * @param {import('../models/Series')} series
+   * @param {import('../models/Series')} series 
    */
   async removeEmptySeries(series) {
     await this.rssFeedManager.closeFeedForEntityId(series.id)
@@ -480,11 +461,6 @@ class ApiRouter {
 
   async getUserListeningSessionsHelper(userId) {
     const userSessions = await Database.getPlaybackSessions({ userId })
-    return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
-  }
-
-  async getUserItemListeningSessionsHelper(userId, mediaItemId) {
-    const userSessions = await Database.getPlaybackSessions({ userId, mediaItemId })
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
   }
 
@@ -545,7 +521,6 @@ class ApiRouter {
           const authorName = (mediaMetadata.authors[i].name || '').trim()
           if (!authorName) {
             Logger.error(`[ApiRouter] Invalid author object, no name`, mediaMetadata.authors[i])
-            mediaMetadata.authors[i].id = null
             continue
           }
 
@@ -574,14 +549,9 @@ class ApiRouter {
             mediaMetadata.authors[i].id = author.id
           }
         }
-        // Remove authors without an id
-        mediaMetadata.authors = mediaMetadata.authors.filter((au) => !!au.id)
         if (newAuthors.length) {
           await Database.createBulkAuthors(newAuthors)
-          SocketAuthority.emitter(
-            'authors_added',
-            newAuthors.map((au) => au.toJSON())
-          )
+          SocketAuthority.emitter('authors_added', newAuthors.map(au => au.toJSON()))
         }
       }
 
@@ -592,7 +562,6 @@ class ApiRouter {
           const seriesName = (mediaMetadata.series[i].name || '').trim()
           if (!seriesName) {
             Logger.error(`[ApiRouter] Invalid series object, no name`, mediaMetadata.series[i])
-            mediaMetadata.series[i].id = null
             continue
           }
 
@@ -621,14 +590,9 @@ class ApiRouter {
             mediaMetadata.series[i].id = seriesItem.id
           }
         }
-        // Remove series without an id
-        mediaMetadata.series = mediaMetadata.series.filter((se) => se.id)
         if (newSeries.length) {
           await Database.createBulkSeries(newSeries)
-          SocketAuthority.emitter(
-            'multiple_series_added',
-            newSeries.map((se) => se.toJSON())
-          )
+          SocketAuthority.emitter('multiple_series_added', newSeries.map(se => se.toJSON()))
         }
       }
     }

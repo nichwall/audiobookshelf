@@ -1,8 +1,6 @@
-const Path = require('path')
 const packageJson = require('../../../package.json')
 const { BookshelfView } = require('../../utils/constants')
 const Logger = require('../../Logger')
-const User = require('../user/User')
 
 class ServerSettings {
   constructor(settings) {
@@ -26,7 +24,6 @@ class ServerSettings {
     this.rateLimitLoginWindow = 10 * 60 * 1000 // 10 Minutes
 
     // Backups
-    this.backupPath = Path.join(global.MetadataPath, 'backups')
     this.backupSchedule = false // If false then auto-backups are disabled
     this.backupsToKeep = 2
     this.maxBackupSize = 1
@@ -58,7 +55,7 @@ class ServerSettings {
     this.buildNumber = packageJson.buildNumber
 
     // Auth settings
-    this.authLoginCustomMessage = null
+    // Active auth methodes
     this.authActiveAuthMethods = ['local']
 
     // openid settings
@@ -70,14 +67,11 @@ class ServerSettings {
     this.authOpenIDLogoutURL = null
     this.authOpenIDClientID = null
     this.authOpenIDClientSecret = null
-    this.authOpenIDTokenSigningAlgorithm = 'RS256'
     this.authOpenIDButtonText = 'Login with OpenId'
     this.authOpenIDAutoLaunch = false
     this.authOpenIDAutoRegister = false
     this.authOpenIDMatchExistingBy = null
     this.authOpenIDMobileRedirectURIs = ['audiobookshelf://oauth']
-    this.authOpenIDGroupClaim = ''
-    this.authOpenIDAdvancedPermsClaim = ''
 
     if (settings) {
       this.construct(settings)
@@ -99,7 +93,6 @@ class ServerSettings {
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
     this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
 
-    this.backupPath = settings.backupPath || Path.join(global.MetadataPath, 'backups')
     this.backupSchedule = settings.backupSchedule || false
     this.backupsToKeep = settings.backupsToKeep || 2
     this.maxBackupSize = settings.maxBackupSize || 1
@@ -120,7 +113,6 @@ class ServerSettings {
     this.version = settings.version || null
     this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
 
-    this.authLoginCustomMessage = settings.authLoginCustomMessage || null // Added v2.8.0
     this.authActiveAuthMethods = settings.authActiveAuthMethods || ['local']
 
     this.authOpenIDIssuerURL = settings.authOpenIDIssuerURL || null
@@ -131,14 +123,11 @@ class ServerSettings {
     this.authOpenIDLogoutURL = settings.authOpenIDLogoutURL || null
     this.authOpenIDClientID = settings.authOpenIDClientID || null
     this.authOpenIDClientSecret = settings.authOpenIDClientSecret || null
-    this.authOpenIDTokenSigningAlgorithm = settings.authOpenIDTokenSigningAlgorithm || 'RS256'
     this.authOpenIDButtonText = settings.authOpenIDButtonText || 'Login with OpenId'
     this.authOpenIDAutoLaunch = !!settings.authOpenIDAutoLaunch
     this.authOpenIDAutoRegister = !!settings.authOpenIDAutoRegister
     this.authOpenIDMatchExistingBy = settings.authOpenIDMatchExistingBy || null
     this.authOpenIDMobileRedirectURIs = settings.authOpenIDMobileRedirectURIs || ['audiobookshelf://oauth']
-    this.authOpenIDGroupClaim = settings.authOpenIDGroupClaim || ''
-    this.authOpenIDAdvancedPermsClaim = settings.authOpenIDAdvancedPermsClaim || ''
 
     if (!Array.isArray(this.authActiveAuthMethods)) {
       this.authActiveAuthMethods = ['local']
@@ -150,26 +139,22 @@ class ServerSettings {
       this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('openid', 0), 1)
     }
 
-    // fallback to local
+    // fallback to local    
     if (!Array.isArray(this.authActiveAuthMethods) || this.authActiveAuthMethods.length == 0) {
       this.authActiveAuthMethods = ['local']
     }
 
     // Migrations
-    if (settings.storeCoverWithBook != undefined) {
-      // storeCoverWithBook was renamed to storeCoverWithItem in 2.0.0
+    if (settings.storeCoverWithBook != undefined) { // storeCoverWithBook was renamed to storeCoverWithItem in 2.0.0
       this.storeCoverWithItem = !!settings.storeCoverWithBook
     }
-    if (settings.storeMetadataWithBook != undefined) {
-      // storeMetadataWithBook was renamed to storeMetadataWithItem in 2.0.0
+    if (settings.storeMetadataWithBook != undefined) { // storeMetadataWithBook was renamed to storeMetadataWithItem in 2.0.0
       this.storeMetadataWithItem = !!settings.storeMetadataWithBook
     }
-    if (settings.homeBookshelfView == undefined) {
-      // homeBookshelfView was added in 2.1.3
+    if (settings.homeBookshelfView == undefined) { // homeBookshelfView was added in 2.1.3
       this.homeBookshelfView = settings.bookshelfView
     }
-    if (settings.metadataFileFormat == undefined) {
-      // metadataFileFormat was added in 2.2.21
+    if (settings.metadataFileFormat == undefined) { // metadataFileFormat was added in 2.2.21
       // All users using old settings will stay abs until changed
       this.metadataFileFormat = 'abs'
     }
@@ -183,15 +168,9 @@ class ServerSettings {
     if (this.logLevel !== Logger.logLevel) {
       Logger.setLogLevel(this.logLevel)
     }
-
-    if (process.env.BACKUP_PATH && this.backupPath !== process.env.BACKUP_PATH) {
-      Logger.info(`[ServerSettings] Using backup path from environment variable ${process.env.BACKUP_PATH}`)
-      this.backupPath = process.env.BACKUP_PATH
-    }
   }
 
-  toJSON() {
-    // Use toJSONForBrowser if sending to client
+  toJSON() { // Use toJSONForBrowser if sending to client
     return {
       id: this.id,
       tokenSecret: this.tokenSecret, // Do not return to client
@@ -205,7 +184,6 @@ class ServerSettings {
       metadataFileFormat: this.metadataFileFormat,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
       rateLimitLoginWindow: this.rateLimitLoginWindow,
-      backupPath: this.backupPath,
       backupSchedule: this.backupSchedule,
       backupsToKeep: this.backupsToKeep,
       maxBackupSize: this.maxBackupSize,
@@ -223,7 +201,6 @@ class ServerSettings {
       logLevel: this.logLevel,
       version: this.version,
       buildNumber: this.buildNumber,
-      authLoginCustomMessage: this.authLoginCustomMessage,
       authActiveAuthMethods: this.authActiveAuthMethods,
       authOpenIDIssuerURL: this.authOpenIDIssuerURL,
       authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
@@ -233,14 +210,11 @@ class ServerSettings {
       authOpenIDLogoutURL: this.authOpenIDLogoutURL,
       authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
       authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
-      authOpenIDTokenSigningAlgorithm: this.authOpenIDTokenSigningAlgorithm,
       authOpenIDButtonText: this.authOpenIDButtonText,
       authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
       authOpenIDAutoRegister: this.authOpenIDAutoRegister,
-      authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy,
-      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
-      authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
-      authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim // Do not return to client
+      authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy, 
+      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs // Do not return to client
     }
   }
 
@@ -250,8 +224,6 @@ class ServerSettings {
     delete json.authOpenIDClientID
     delete json.authOpenIDClientSecret
     delete json.authOpenIDMobileRedirectURIs
-    delete json.authOpenIDGroupClaim
-    delete json.authOpenIDAdvancedPermsClaim
     return json
   }
 
@@ -263,12 +235,17 @@ class ServerSettings {
    * Auth settings required for openid to be valid
    */
   get isOpenIDAuthSettingsValid() {
-    return this.authOpenIDIssuerURL && this.authOpenIDAuthorizationURL && this.authOpenIDTokenURL && this.authOpenIDUserInfoURL && this.authOpenIDJwksURL && this.authOpenIDClientID && this.authOpenIDClientSecret && this.authOpenIDTokenSigningAlgorithm
+    return this.authOpenIDIssuerURL &&
+      this.authOpenIDAuthorizationURL &&
+      this.authOpenIDTokenURL &&
+      this.authOpenIDUserInfoURL &&
+      this.authOpenIDJwksURL &&
+      this.authOpenIDClientID &&
+      this.authOpenIDClientSecret
   }
 
   get authenticationSettings() {
     return {
-      authLoginCustomMessage: this.authLoginCustomMessage,
       authActiveAuthMethods: this.authActiveAuthMethods,
       authOpenIDIssuerURL: this.authOpenIDIssuerURL,
       authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
@@ -278,23 +255,16 @@ class ServerSettings {
       authOpenIDLogoutURL: this.authOpenIDLogoutURL,
       authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
       authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
-      authOpenIDTokenSigningAlgorithm: this.authOpenIDTokenSigningAlgorithm,
       authOpenIDButtonText: this.authOpenIDButtonText,
       authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
       authOpenIDAutoRegister: this.authOpenIDAutoRegister,
       authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy,
-      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
-      authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
-      authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
-
-      authOpenIDSamplePermissions: User.getSampleAbsPermissions()
+      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs // Do not return to client
     }
   }
 
   get authFormData() {
-    const clientFormData = {
-      authLoginCustomMessage: this.authLoginCustomMessage
-    }
+    const clientFormData = {}
     if (this.authActiveAuthMethods.includes('openid')) {
       clientFormData.authOpenIDButtonText = this.authOpenIDButtonText
       clientFormData.authOpenIDAutoLaunch = this.authOpenIDAutoLaunch
@@ -304,8 +274,8 @@ class ServerSettings {
 
   /**
    * Update server settings
-   *
-   * @param {Object} payload
+   * 
+   * @param {Object} payload 
    * @returns {boolean} true if updates were made
    */
   update(payload) {

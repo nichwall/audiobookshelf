@@ -35,27 +35,24 @@ class PlaylistMediaItem extends Model {
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize
+   * @param {import('../Database').sequelize} sequelize 
    */
   static init(sequelize) {
-    super.init(
-      {
-        id: {
-          type: DataTypes.UUID,
-          defaultValue: DataTypes.UUIDV4,
-          primaryKey: true
-        },
-        mediaItemId: DataTypes.UUIDV4,
-        mediaItemType: DataTypes.STRING,
-        order: DataTypes.INTEGER
+    super.init({
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
       },
-      {
-        sequelize,
-        timestamps: true,
-        updatedAt: false,
-        modelName: 'playlistMediaItem'
-      }
-    )
+      mediaItemId: DataTypes.UUIDV4,
+      mediaItemType: DataTypes.STRING,
+      order: DataTypes.INTEGER
+    }, {
+      sequelize,
+      timestamps: true,
+      updatedAt: false,
+      modelName: 'playlistMediaItem'
+    })
 
     const { book, podcastEpisode, playlist } = sequelize.models
 
@@ -77,7 +74,7 @@ class PlaylistMediaItem extends Model {
     })
     PlaylistMediaItem.belongsTo(podcastEpisode, { foreignKey: 'mediaItemId', constraints: false })
 
-    PlaylistMediaItem.addHook('afterFind', (findResult) => {
+    PlaylistMediaItem.addHook('afterFind', findResult => {
       if (!findResult) return
 
       if (!Array.isArray(findResult)) findResult = [findResult]

@@ -97,17 +97,7 @@ class FeedEpisode {
     this.fullPath = episode.audioFile.metadata.path
   }
 
-  /**
-   * 
-   * @param {import('../objects/LibraryItem')} libraryItem 
-   * @param {string} serverAddress 
-   * @param {string} slug 
-   * @param {import('../objects/files/AudioTrack')} audioTrack 
-   * @param {Object} meta 
-   * @param {boolean} useChapterTitles 
-   * @param {number} [additionalOffset] 
-   */
-  setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, meta, useChapterTitles, additionalOffset = null) {
+  setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, meta, additionalOffset = null) {
     // Example: <pubDate>Fri, 04 Feb 2015 00:00:00 GMT</pubDate>
     let timeOffset = isNaN(audioTrack.index) ? 0 : (Number(audioTrack.index) * 1000) // Offset pubdate to ensure correct order
     let episodeId = uuidv4()
@@ -129,10 +119,10 @@ class FeedEpisode {
     if (libraryItem.media.tracks.length == 1) { // If audiobook is a single file, use book title instead of chapter/file title
       title = libraryItem.media.metadata.title
     } else {
-      if (useChapterTitles) {
+      if (libraryItem.media.chapters.length) {
         // If audio track start and chapter start are within 1 seconds of eachother then use the chapter title
-        const matchingChapter = libraryItem.media.chapters.find(ch => Math.abs(ch.start - audioTrack.startOffset) < 1)
-        if (matchingChapter?.title) title = matchingChapter.title
+        var matchingChapter = libraryItem.media.chapters.find(ch => Math.abs(ch.start - audioTrack.startOffset) < 1)
+        if (matchingChapter && matchingChapter.title) title = matchingChapter.title
       }
     }
 
