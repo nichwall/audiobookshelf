@@ -23,4 +23,8 @@
  *         - Favorite
  *         - Nonfiction/History
  *         - Content: Violence
+ *     size:
+ *       description: The total size (in bytes) of the item or file.
+ *       type: integer
+ *       example: 268824228
  */

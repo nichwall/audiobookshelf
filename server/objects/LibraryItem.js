@@ -26,11 +26,12 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
  *     libraryItemId:
  *       type: string
- *       oneOf:
+ *       anyOf:
  *         - $ref: '#/components/schemas/oldLibraryItemId'
  *         - $ref: '#/components/schemas/newLibraryItemId'
  *     libraryItemBase:
  *       type: object
+ *       description: Base library item schema
  *       properties:
  *         id:
  *           $ref: '#/components/schemas/libraryItemId'
@@ -125,9 +126,7 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  *               items:
  *                 $ref: '#/components/schemas/libraryFile'
  *             size:
- *               description: The total size (in bytes) of the library item.
- *               type: integer
- *               example: 268990279
+ *               $ref: '#/components/schemas/size'
  */
 class LibraryItem {
   constructor(libraryItem = null) {

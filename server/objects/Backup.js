@@ -38,9 +38,7 @@ const version = require('../../package.json').version
  *           type: string
  *           example: 2022-11-14T0130.audiobookshelf
  *         fileSize:
- *           description: The size (in bytes) of the backup file.
- *           type: integer
- *           example: 7776983
+ *           $ref: '#/components/schemas/size'
  *         createdAt:
  *           $ref: '#/components/schemas/createdAt'
  *         serverVersion:

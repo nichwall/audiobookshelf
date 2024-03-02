@@ -118,9 +118,7 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *           type: integer
  *           example: 3
  *         size:
- *           description: The total size (in bytes) of the podcast.
- *           type: integer
- *           example: 23706728
+ *           $ref: '#/components/schemas/size'
  *     podcastExpanded:
  *       type: object
  *       properties:
@@ -160,9 +158,7 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *           type: integer
  *           example: 3
  *         size:
- *           description: The total size (in bytes) of the podcast.
- *           type: integer
- *           example: 23706728
+ *           $ref: '#/components/schemas/size'
  *     podcastMetadataBase:
  *       type: object
  *       properties:
@@ -468,9 +464,7 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *               type: number
  *               example: 1454.18449
  *             size:
- *               description: The total size (in bytes) of the podcast episode.
- *               type: integer
- *               example: 23653735
+ *               $ref: '#/components/schemas/size'
  *     podcastEpisodeEnclousure:
  *       type: [object, 'null']
  *       properties:
@@ -489,7 +483,7 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *           type: string
  *           example: '20588611'
  *     podcastEpisodeDownload:
- *       type: object
+ *       type: [object, 'null']
  *       properties:
  *         id:
  *           $ref: '#/components/schemas/podcastEpisodeDownloadId'

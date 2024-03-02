@@ -24,9 +24,7 @@
  *           type: string
  *           example: Wizards First Rule 01.mp3
  *         size:
- *           description: The size (in bytes) of the file.
- *           type: integer
- *           example: 48037888
+ *           $ref: '#/components/schemas/size'
  *         mtimeMs:
  *           description: The time (in ms since POSIX epoch) when the file was last modified on disk.
  *           type: integer
