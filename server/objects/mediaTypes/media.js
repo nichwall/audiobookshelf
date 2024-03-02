@@ -7,7 +7,7 @@
  *       description: The type of media, will be book or podcast.
  *       enum: [book, podcast]
  *     media:
- *       description: The media of the library item.
+ *       description: The media of the library item, contains the book or podcast object.
  *       oneOf:
  *         - $ref: '#/components/schemas/book'
  *         - $ref: '#/components/schemas/podcast'
