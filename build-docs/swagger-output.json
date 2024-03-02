@@ -405,6 +405,66 @@
       }
     },
     "/api/libraries": {
+      "post": {
+        "operationId": "createLibrary",
+        "summary": "Create a library with the specified name",
+        "tags": [
+          "Libraries"
+        ],
+        "requestBody": {
+          "description": "Data used to create the new library",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "folders"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "My Audiobook Library"
+                  },
+                  "folders": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/folder"
+                    }
+                  },
+                  "icon": {
+                    "type": "string",
+                    "description": "The icon for the libary.",
+                    "default": "database"
+                  },
+                  "mediaType": {
+                    "type": "string",
+                    "description": "The type of media content for the library",
+                    "enum": [
+                      "book",
+                      "podcast"
+                    ],
+                    "default": "book"
+                  },
+                  "provider": {
+                    "type": "string",
+                    "description": "The default provider for the library",
+                    "default": "google"
+                  },
+                  "settings": {
+                    "$ref": "#/components/schemas/librarySettings"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/library200"
+          }
+        }
+      },
       "get": {
         "operationId": "getAllLibraries",
         "summary": "Get all libraries on server",
@@ -413,14 +473,49 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/library"
-                }
-              }
-            }
+            "$ref": "#/components/responses/library200"
+          }
+        }
+      }
+    },
+    "/api/libraries/{id}": {
+      "get": {
+        "operationId": "getLibraryByID",
+        "summary": "Get a single library by ID on server",
+        "tags": [
+          "Libraries"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/libraryID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/library200"
+          },
+          "404": {
+            "$ref": "#/components/responses/library404"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteLibraryByID",
+        "summary": "Delete a single library by ID on the server",
+        "tags": [
+          "Libraries"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/libraryID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/library200"
+          },
+          "404": {
+            "$ref": "#/components/responses/library404"
           }
         }
       }
@@ -434,13 +529,7 @@
         ],
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "description": "Library ID",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "$ref": "#/components/parameters/libraryID"
           }
         ],
         "responses": {
@@ -595,6 +684,45 @@
     }
   },
   "components": {
+    "parameters": {
+      "libraryID": {
+        "name": "id",
+        "in": "path",
+        "description": "Library ID",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "library200": {
+        "description": "OK",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/library"
+            }
+          }
+        }
+      },
+      "library404": {
+        "description": "Library not found or user does not have access to library.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "schemas": {
       "backup": {
         "type": "object",
@@ -1757,38 +1885,6 @@
             "type": "integer",
             "description": "The time (in ms since POSIX epoch) when the library was last updated. (Read Only)",
             "example": 1646520916818
-          }
-        }
-      },
-      "librarySettings": {
-        "type": "object",
-        "properties": {
-          "coverAspectRatio": {
-            "type": "integer",
-            "description": "Whether the library should use square book covers. Must be 0 (for false) or 1 (for true).",
-            "example": 1
-          },
-          "disableWatcher": {
-            "type": "boolean",
-            "description": "Whether to disable the folder watcher for the library.",
-            "example": false
-          },
-          "skipMatchingMediaWithAsin": {
-            "type": "boolean",
-            "description": "Whether to skip matching books that already have an ASIN.",
-            "example": false
-          },
-          "skipMatchingMediaWithIsbn": {
-            "type": "boolean",
-            "description": "Whether to skip matching books that already have an ISBN.",
-            "example": false
-          },
-          "autoScanCronExpression": {
-            "description": "The cron expression for when to automatically scan the library folders. If null, automatic scanning will be disabled.",
-            "type": [
-              "string",
-              "null"
-            ]
           }
         }
       },
@@ -3740,7 +3836,9 @@
           },
           "playMethod": {
             "description": "What play method the playback session is using. See below for values.",
-            "$ref": "#/components/schemas/playMethod"
+            "type": {
+              "$ref": "#/components/schemas/playMethod"
+            }
           },
           "mediaPlayer": {
             "description": "The given media player when the playback session was requested.",
@@ -4000,6 +4098,43 @@
                 }
               ]
             }
+          }
+        }
+      },
+      "librarySettings": {
+        "type": "object",
+        "properties": {
+          "coverAspectRatio": {
+            "type": "integer",
+            "description": "Whether the library should use square book covers. Must be 0 (for false) or 1 (for true).",
+            "default": 1,
+            "example": 1
+          },
+          "disableWatcher": {
+            "type": "boolean",
+            "description": "Whether to disable the folder watcher for the library.",
+            "default": false,
+            "example": false
+          },
+          "skipMatchingMediaWithAsin": {
+            "type": "boolean",
+            "description": "Whether to skip matching books that already have an ASIN.",
+            "default": false,
+            "example": false
+          },
+          "skipMatchingMediaWithIsbn": {
+            "type": "boolean",
+            "description": "Whether to skip matching books that already have an ISBN.",
+            "default": false,
+            "example": false
+          },
+          "autoScanCronExpression": {
+            "description": "The cron expression for when to automatically scan the library folders. If null, automatic scanning will be disabled.",
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },

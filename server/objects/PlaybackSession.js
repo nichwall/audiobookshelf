@@ -89,7 +89,8 @@ const VideoMetadata = require('./metadata/VideoMetadata')
  *           example: 1454.18449
  *         playMethod:
  *           description: What play method the playback session is using. See below for values.
- *           $ref: '#/components/schemas/playMethod'
+ *           type:
+ *             $ref: '#/components/schemas/playMethod'
  *         mediaPlayer:
  *           description: The given media player when the playback session was requested.
  *           type: string

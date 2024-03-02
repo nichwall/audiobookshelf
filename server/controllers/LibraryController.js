@@ -22,9 +22,83 @@ const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const authorFilters = require('../utils/queries/authorFilters')
 
+/**
+ * @openapi
+ * components:
+ *   parameters:
+ *     libraryID:
+ *       name: id
+ *       in: path
+ *       description: Library ID
+ *       required: true
+ *       schema:
+ *         type: string
+ *   responses: 
+ *     library200:
+ *       description: OK
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/library'
+ *     library404:
+ *       description: Library not found or user does not have access to library.
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               message:
+ *                 type: string
+ *                 example: Not found
+ */
+
 class LibraryController {
   constructor() { }
 
+  /**
+   * @openapi
+   * /api/libraries:
+   *   post:
+   *     operationId: createLibrary
+   *     summary: Create a library with the specified name
+   *     tags:
+   *       - Libraries
+   *     requestBody:
+   *       description: Data used to create the new library
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - name
+   *               - folders
+   *             properties:
+   *               name:
+   *                 type: string
+   *                 example: My Audiobook Library
+   *               folders:
+   *                 type: array
+   *                 items:
+   *                   $ref: '#/components/schemas/folder'
+   *               icon:
+   *                 type: string
+   *                 description: The icon for the libary.
+   *                 default: database
+   *               mediaType:
+   *                 type: string
+   *                 description: The type of media content for the library
+   *                 enum: [book, podcast]
+   *                 default: book
+   *               provider:
+   *                 type: string
+   *                 description: The default provider for the library
+   *                 default: google
+   *               settings:
+   *                 $ref: '#/components/schemas/librarySettings'
+   *     responses:
+   *       200:
+   *         $ref: '#/components/responses/library200'
+   */
   async create(req, res) {
     const newLibraryPayload = {
       ...req.body
@@ -89,11 +163,7 @@ class LibraryController {
    *       - Libraries
    *     responses:
    *       200:
-   *         description: OK
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/library'
+   *         $ref: '#/components/responses/library200'
    */
   async findAll(req, res) {
     const libraries = await Database.libraryModel.getAllOldLibraries()
@@ -115,6 +185,22 @@ class LibraryController {
    * 
    * @param {import('express').Request} req 
    * @param {import('express').Response} res 
+   */
+  /**
+   * @openapi
+   * /api/libraries/{id}:
+   *   get:
+   *     operationId: getLibraryByID
+   *     summary: Get a single library by ID on server
+   *     tags:
+   *       - Libraries
+   *     parameters:
+   *       - $ref: '#/components/parameters/libraryID'
+   *     responses:
+   *       200:
+   *         $ref: '#/components/responses/library200'
+   *       404:
+   *         $ref: '#/components/responses/library404'
    */
   async findOne(req, res) {
     const includeArray = (req.query.include || '').split(',')
@@ -242,6 +328,22 @@ class LibraryController {
    * Delete a library
    * @param {*} req 
    * @param {*} res 
+   */
+  /**
+   * @openapi
+   * /api/libraries/{id}:
+   *   delete:
+   *     operationId: deleteLibraryByID
+   *     summary: Delete a single library by ID on the server
+   *     tags:
+   *       - Libraries
+   *     parameters:
+   *       - $ref: '#/components/parameters/libraryID'
+   *     responses:
+   *       200:
+   *         $ref: '#/components/responses/library200'
+   *       404:
+   *         $ref: '#/components/responses/library404'
    */
   async delete(req, res) {
     const library = req.library
@@ -539,12 +641,7 @@ class LibraryController {
    *     tags:
    *       - Library
    *     parameters:
-   *       - name: id
-   *         in: path
-   *         description: Library ID
-   *         required: true
-   *         schema:
-   *           type: string
+   *       - $ref: '#/components/parameters/libraryID'
    *     responses:
    *       200:
    *         description: Collection created successfully
