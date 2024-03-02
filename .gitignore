@@ -19,3 +19,6 @@
 sw.*
 .DS_STORE
 .idea/*
+
+wiretap-report.json
+build-docs/report.html
