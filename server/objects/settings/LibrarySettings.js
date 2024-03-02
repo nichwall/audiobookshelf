@@ -1,5 +1,37 @@
 const { BookCoverAspectRatio } = require('../../utils/constants')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     librarySettings:
+ *       type: object
+ *       properties:
+ *         coverAspectRatio:
+ *           type: integer
+ *           description: Whether the library should use square book covers. Must be 0 (for false) or 1 (for true).
+ *           default: 1
+ *           example: 1
+ *         disableWatcher:
+ *           type: boolean
+ *           description: Whether to disable the folder watcher for the library.
+ *           default: false
+ *           example: false
+ *         skipMatchingMediaWithAsin:
+ *           type: boolean
+ *           description: Whether to skip matching books that already have an ASIN.
+ *           default: false
+ *           example: false
+ *         skipMatchingMediaWithIsbn:
+ *           type: boolean
+ *           description: Whether to skip matching books that already have an ISBN.
+ *           default: false
+ *           example: false
+ *         autoScanCronExpression:
+ *           description: The cron expression for when to automatically scan the library folders. If null, automatic scanning will be disabled.
+ *           default: null
+ *           type: [string, 'null']
+ */
 class LibrarySettings {
   constructor(settings) {
     this.coverAspectRatio = BookCoverAspectRatio.SQUARE
