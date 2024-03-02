@@ -39,6 +39,7 @@ const { filePathToPOSIX } = require('../utils/fileUtils')
  *           type: integer
  *           description: Display position of the library in the list of libraries. Must be >= 1.
  *           example: 1
+ *           minimum: 1
  *         icon:
  *           type: string
  *           description: The selected icon for the library. See [Library Icons](https://api.audiobookshelf.org/#library-icons) for a list of possible icons.
@@ -80,11 +81,9 @@ const { filePathToPOSIX } = require('../utils/fileUtils')
  *             type: object
  *             properties:
  *               id:
- *                 type: string
- *                 example: ser_cabkj4jeu8be3rap4g
+ *                 $ref: '#/components/schemas/seriesId'
  *               name:
- *                 type: string
- *                 example: Sword of Truth
+ *                 $ref: '#/components/schemas/seriesName'
  *         narrators:
  *           description: The narrators of books in the library.
  *           type: array
