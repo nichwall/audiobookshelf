@@ -26,7 +26,7 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
  *     libraryItemId:
  *       type: string
- *       anyOf:
+ *       oneOf:
  *         - $ref: '#/components/schemas/oldLibraryItemId'
  *         - $ref: '#/components/schemas/newLibraryItemId'
  *     libraryItemBase:
@@ -71,12 +71,12 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  *           description: Whether the library item was scanned and no longer has media files.
  *           type: boolean
  *         mediaType:
- *           - $ref: '#/components/schemas/mediaType'
+ *           $ref: '#/components/schemas/mediaType'
  *     libraryItem:
  *       type: object
  *       description: A single item on the server, like a book or podcast.
  *       allOf:
- *         - $ref : '#/components/schemas/libraryItemBase'
+ *         - $ref: '#/components/schemas/libraryItemBase'
  *         - type: object
  *           properties:
  *             folderId:
