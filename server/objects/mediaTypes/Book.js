@@ -10,15 +10,12 @@ const EBookFile = require('../files/EBookFile')
  * @openapi
  * components:
  *   schemas:
- *     book:
+ *     bookBase:
  *       type: object
+ *       description: Base book schema
  *       properties:
  *         libraryItemId:
- *           description: The ID of the library item that contains the book.
- *           type: string
- *           example: li_8gch9ve09orgn4fdz8
- *         metadata:
- *           $ref: '#/components/schemas/bookMetadata'
+ *           $ref: '#/components/schemas/libraryItemId'
  *         coverPath:
  *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
  *           type: [string, 'null']
@@ -40,8 +37,18 @@ const EBookFile = require('../files/EBookFile')
  *             type: integer
  *         ebookFile:
  *           $ref: '#/components/schemas/ebookFile'
+ *     book:
+ *       type: object
+ *       description: Book schema, contains information about the book library item.
+ *       allOf:
+ *         - $ref: '#/components/schemas/bookBase'
+ *         - type: object
+ *           properties:
+ *             metadata:
+ *               $ref: '#/components/schemas/bookMetadata'
  *     bookMinified:
  *       type: object
+ *       description: Minified book schema. Does not depend on `bookBase` because there's pretty much no overlap.
  *       properties:
  *         metadata:
  *           $ref: '#/components/schemas/bookMetadataMinified'
@@ -72,58 +79,29 @@ const EBookFile = require('../files/EBookFile')
  *           type: integer
  *           example: 0
  *         duration:
- *           description: The total length (in seconds) of the book.
- *           type: number
- *           example: 33854.905
+ *           $ref: '#/components/schemas/durationSec'
  *         size:
- *           description: The total size (in bytes) of the book.
- *           type: integer
- *           example: 268824228
+ *           $ref: '#/components/schemas/size'
  *         ebookFormat:
  *           description: The format of ebook of the book. Will be null if the book is an audiobook.
  *           type: [string, 'null']
  *     bookExpanded:
  *       type: object
- *       properties:
- *         libraryItemId:
- *           description: The ID of the library item that contains the book.
- *           type: string
- *           example: li_8gch9ve09orgn4fdz8
- *         metadata:
- *           $ref: '#/components/schemas/bookMetadataExpanded'
- *         coverPath:
- *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
- *           type: [string, 'null']
- *           example: /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg
- *         tags:
- *           $ref: '#/components/schemas/tags'
- *         audioFiles:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/audioFile'
- *         chapters:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/bookChapter'
- *         missingParts:
- *           description: Any parts missing from the book by track index.
- *           type: array
- *           items:
- *             type: integer
- *         ebookFile:
- *           $ref: '#/components/schemas/ebookFile'
- *         duration:
- *           description: The total length (in seconds) of the book.
- *           type: integer
- *           example: 33854.905
- *         size:
- *           description: The total size (in bytes) of the book.
- *           type: integer
- *           example: 268824228
- *         tracks:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/audioTrack'
+ *       description: Expanded book object. Adds the duration and size of book, along with audio tracks for the book.
+ *       allOf:
+ *         - $ref: '#/components/schemas/bookBase'
+ *         - type: object
+ *           properties:
+ *             metadata:
+ *               $ref: '#/components/schemas/bookMetadataExpanded'
+ *             duration:
+ *               $ref: '#/components/schemas/durationSec'
+ *             size:
+ *               $ref: '#/components/schemas/size'
+ *             tracks:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/audioTrack'
  */
 class Book {
   constructor(book) {

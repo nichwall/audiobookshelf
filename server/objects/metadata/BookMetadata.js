@@ -6,6 +6,12 @@ const parseNameString = require('../../utils/parsers/parseNameString')
  * @openapi
  * components:
  *   schemas:
+ *     narrators:
+ *       description: The narrators of the audiobook.
+ *       type: array
+ *       items:
+ *         type: string
+ *         example: Sam Tsoutsouvas
  *     bookMetadataBase:
  *       type: object
  *       properties:
@@ -81,11 +87,7 @@ const parseNameString = require('../../utils/parsers/parseNameString')
  *               items:
  *                 $ref: '#/components/schemas/authorMinified'
  *             narrators:
- *               description: The narrators of the audiobook.
- *               type: array
- *               items:
- *                 type: string
- *                 example: Sam Tsoutsouvas
+ *                 $ref: '#/components/schemas/narrators'
  *             series:
  *               description: The series the book belongs to.
  *               type: array
@@ -149,11 +151,7 @@ const parseNameString = require('../../utils/parsers/parseNameString')
  *               items:
  *                 $ref: '#/components/schemas/authorMinified'
  *             narrators:
- *               description: The narrators of the audiobook.
- *               type: array
- *               items:
- *                 type: string
- *                 example: Sam Tsoutsouvas
+ *                 $ref: '#/components/schemas/narrators'
  *             series:
  *               description: The series the book belongs to.
  *               type: array
