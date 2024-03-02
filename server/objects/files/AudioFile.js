@@ -57,9 +57,7 @@ const FileMetadata = require('../metadata/FileMetadata')
  *           type: string
  *           example: MP2/3 (MPEG audio layer 2/3)
  *         duration:
- *           description: The total length (in seconds) of the audio file.
- *           type: number
- *           example: 6004.6675
+ *           $ref: '#/components/schemas/durationSec'
  *         bitRate:
  *           description: The bit rate (in bit/s) of the audio file.
  *           type: integer

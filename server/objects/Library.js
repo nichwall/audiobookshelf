@@ -39,6 +39,7 @@ const { filePathToPOSIX } = require('../utils/fileUtils')
  *           type: integer
  *           description: Display position of the library in the list of libraries. Must be >= 1.
  *           example: 1
+ *           minimum: 1
  *         icon:
  *           type: string
  *           description: The selected icon for the library. See [Library Icons](https://api.audiobookshelf.org/#library-icons) for a list of possible icons.
@@ -57,28 +58,6 @@ const { filePathToPOSIX } = require('../utils/fileUtils')
  *           type: integer
  *           description: The time (in ms since POSIX epoch) when the library was last updated. (Read Only)
  *           example: 1646520916818
- *     librarySettings:
- *       type: object
- *       properties:
- *         coverAspectRatio:
- *           type: integer
- *           description: Whether the library should use square book covers. Must be 0 (for false) or 1 (for true).
- *           example: 1
- *         disableWatcher:
- *           type: boolean
- *           description: Whether to disable the folder watcher for the library.
- *           example: false
- *         skipMatchingMediaWithAsin:
- *           type: boolean
- *           description: Whether to skip matching books that already have an ASIN.
- *           example: false
- *         skipMatchingMediaWithIsbn:
- *           type: boolean
- *           description: Whether to skip matching books that already have an ISBN.
- *           example: false
- *         autoScanCronExpression:
- *           description: The cron expression for when to automatically scan the library folders. If null, automatic scanning will be disabled.
- *           type: [string, 'null']
  *     libraryFilterData:
  *       type: object
  *       properties:
@@ -102,11 +81,9 @@ const { filePathToPOSIX } = require('../utils/fileUtils')
  *             type: object
  *             properties:
  *               id:
- *                 type: string
- *                 example: ser_cabkj4jeu8be3rap4g
+ *                 $ref: '#/components/schemas/seriesId'
  *               name:
- *                 type: string
- *                 example: Sword of Truth
+ *                 $ref: '#/components/schemas/seriesName'
  *         narrators:
  *           description: The narrators of books in the library.
  *           type: array

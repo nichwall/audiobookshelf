@@ -20,6 +20,7 @@ def write_to_json(fname, data):
 # Server specific information
 server_ip = "http://localhost"
 server_port = 9090
+#server_port = 3333
 
 ###########################
 ### Setup
@@ -215,7 +216,7 @@ def delete_collections(id):
   # Delete response
   r = requests.delete(url = url, headers = HEADERS)
 
-if True:
+if False:
   resp = create_collection(library_ids[0], "First None", None, None)
   descriptions = [None, "First description", "Hello, here we go with some extra things."]
   book_arrs    = [None, [books[0]], books[1:3], books[3:7]]
@@ -274,3 +275,121 @@ if True:
   # Delete all collections
   for collection in collections:
     delete_collections(collection)
+  
+# This function attempts to create a library, performs some get requests on the library,
+# then deletes the newly created library. There is no content for the library, so
+# all of the media related things should be empty.
+def create_and_delete_library(headers):
+  def create_library(name, folder):
+    url = f"{BASEURL}/api/libraries"
+  
+    params = {'name'   : name,
+              'folders': folder}
+  
+    # Post response
+    r = requests.post(url = url, headers = headers, json = params)
+  
+    data = r.json()
+    return data
+
+  def get_library(id):
+    url = f"{BASEURL}/api/libraries/{id}"
+    r = requests.get(url = url, headers = headers)
+    try:
+      return r.json()
+    except:
+      return None
+
+  def delete_library_issues(id):
+    url = f"{BASEURL}/api/libraries/{id}/issues"
+    r = requests.delete(url = url, headers = headers)
+    try:
+      return r.json()
+    except:
+      return None
+
+  def delete_library(id):
+    url = f"{BASEURL}/api/libraries/{id}"
+    r = requests.delete(url = url, headers = headers)
+    try:
+      return r.json()
+    except:
+      return None
+  
+  library_name = "Test library"
+  folders      = [{'fullPath': '/bin'}]
+
+  resp = create_library(library_name, folders)
+  print("New library")
+  print(resp)
+  time.sleep(1)
+  get_library(resp['id'])
+  get_library("bbbb")
+  time.sleep(1)
+  delete_library_issues(resp['id'])
+  delete_library_issues("aaaa")
+  time.sleep(1)
+  delete_library(resp['id'])
+  delete_library("cccc")
+
+create_and_delete_library(HEADERS)
+
+# This function performs all of the gets on a library to ensure responses are correct.
+def existing_library_gets(headers, libraryId, params=None):
+  def get_library_request(path, headers, params=None):
+    if params:
+      r = requests.get(url = path, headers = headers, params=params)
+    else:
+      r = requests.get(url = path, headers = headers)
+
+    try:
+      return r.json()
+    except:
+      return None
+
+  def get_library(libraryId):
+    get_library_request(f"{BASEURL}/api/libraries/{libraryId}", headers)
+  
+  def get_library_items(libraryId):
+    get_library_request(f"{BASEURL}/api/libraries/{libraryId}/items", headers)
+    params = {'limit': 0}
+    get_library_request(f"{BASEURL}/api/libraries/{libraryId}/items", headers, params)
+    params = {'limit': 4}
+    get_library_request(f"{BASEURL}/api/libraries/{libraryId}/items", headers, params)
+    params = {'page': 1}
+    get_library_request(f"{BASEURL}/api/libraries/{libraryId}/items", headers, params)
+    params = {'limit': 4, 'page': 1}
+    get_library_request(f"{BASEURL}/api/libraries/{libraryId}/items", headers, params)
+    params = {'sort': 'media.metadata.title'}
+    get_library_request(f"{BASEURL}/api/libraries/{libraryId}/items", headers, params)
+    params = {'desc': True}
+    get_library_request(f"{BASEURL}/api/libraries/{libraryId}/items", headers, params)
+    params = {'desc': False}
+    get_library_request(f"{BASEURL}/api/libraries/{libraryId}/items", headers, params)
+    params = {'minified': True}
+    get_library_request(f"{BASEURL}/api/libraries/{libraryId}/items", headers, params)
+    params = {'minified': False}
+    get_library_request(f"{BASEURL}/api/libraries/{libraryId}/items", headers, params)
+    params = {'collapseseries': True}
+    get_library_request(f"{BASEURL}/api/libraries/{libraryId}/items", headers, params)
+    params = {'collapseseries': False}
+    get_library_request(f"{BASEURL}/api/libraries/{libraryId}/items", headers, params)
+
+
+  get_library(libraryId)
+  get_library_items(libraryId)
+  get_library_request(f"{BASEURL}/api/libraries/{libraryId}/episode-downloads", headers)
+  get_library_request(f"{BASEURL}/api/libraries/{libraryId}/series", headers)
+  #get_library_request(f"{BASEURL}/api/libraries/{libraryId}/series/{seriesId}", headers) TODO
+  get_library_request(f"{BASEURL}/api/libraries/{libraryId}/collections", headers)
+  get_library_request(f"{BASEURL}/api/libraries/{libraryId}/playlists", headers)
+  get_library_request(f"{BASEURL}/api/libraries/{libraryId}/personalized", headers)
+  get_library_request(f"{BASEURL}/api/libraries/{libraryId}/filterdata", headers)
+  get_library_request(f"{BASEURL}/api/libraries/{libraryId}/search", headers)
+  get_library_request(f"{BASEURL}/api/libraries/{libraryId}/stats", headers)
+  get_library_request(f"{BASEURL}/api/libraries/{libraryId}/authors", headers)
+  get_library_request(f"{BASEURL}/api/libraries/{libraryId}/narrators", headers)
+  #get_library_request(f"{BASEURL}/api/libraries/{libraryId}/matchall", headers) TODO
+  get_library_request(f"{BASEURL}/api/libraries/{libraryId}/opml", headers)
+
+existing_library_gets(HEADERS, library_ids[0])

@@ -31,6 +31,7 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  *         - $ref: '#/components/schemas/newLibraryItemId'
  *     libraryItemBase:
  *       type: object
+ *       description: Base library item schema
  *       properties:
  *         id:
  *           $ref: '#/components/schemas/libraryItemId'
@@ -71,12 +72,12 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  *           description: Whether the library item was scanned and no longer has media files.
  *           type: boolean
  *         mediaType:
- *           - $ref: '#/components/schemas/mediaType'
+ *           $ref: '#/components/schemas/mediaType'
  *     libraryItem:
  *       type: object
  *       description: A single item on the server, like a book or podcast.
  *       allOf:
- *         - $ref : '#/components/schemas/libraryItemBase'
+ *         - $ref: '#/components/schemas/libraryItemBase'
  *         - type: object
  *           properties:
  *             folderId:
@@ -125,9 +126,7 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  *               items:
  *                 $ref: '#/components/schemas/libraryFile'
  *             size:
- *               description: The total size (in bytes) of the library item.
- *               type: integer
- *               example: 268990279
+ *               $ref: '#/components/schemas/size'
  */
 class LibraryItem {
   constructor(libraryItem = null) {

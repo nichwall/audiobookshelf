@@ -5,17 +5,33 @@ const { getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index
  * @openapi
  * components:
  *   schemas:
+ *     oldSeriesId:
+ *       description: The ID of series on server version 2.2.23 and before.
+ *       type: string
+ *       format: "ser_[a-z0-9]{18}"
+ *       example: ser_o78uaoeuh78h6aoeif
+ *     newSeriesId:
+ *       type: string
+ *       description: The ID of series after 2.3.0.
+ *       format: uuid
+ *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+ *     seriesId:
+ *       type: string
+ *       description: The ID of the series.
+ *       anyOf:
+ *         - $ref: '#/components/schemas/oldSeriesId'
+ *         - $ref: '#/components/schemas/newSeriesId'
+ *     seriesName:
+ *       description: The name of the series.
+ *       type: string
+ *       example: Sword of Truth
  *     series:
  *       type: object
  *       properties:
  *         id:
- *           description: The ID of the series.
- *           type: string
- *           example: ser_cabkj4jeu8be3rap4g
+ *           $ref: '#/components/schemas/seriesId'
  *         name:
- *           description: The name of the series.
- *           type: string
- *           example: Sword of Truth
+ *           $ref: '#/components/schemas/seriesName'
  *         description:
  *           description: A description for the series. Will be null if there is none.
  *           type: [string, 'null']
@@ -27,13 +43,9 @@ const { getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index
  *       type: object
  *       properties:
  *         id:
- *           description: The ID of the series.
- *           type: string
- *           example: ser_cabkj4jeu8be3rap4g
+ *           $ref: '#/components/schemas/seriesId'
  *         name:
- *           description: The name of the series.
- *           type: string
- *           example: Sword of Truth
+ *           $ref: '#/components/schemas/seriesName'
  *         nameIgnorePrefix:
  *           description: The name of the series with any prefix moved to the end.
  *           type: string
@@ -42,8 +54,7 @@ const { getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index
  *           description: The IDs of the library items in the series.
  *           type: array
  *           items:
- *             type: string
- *             example: li_8gch9ve09orgn4fdz8
+ *             $ref: '#/components/schemas/libraryItemId'
  *         numBooks:
  *           description: The number of books in the series.
  *           type: integer
@@ -52,13 +63,9 @@ const { getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index
  *       type: object
  *       properties:
  *         id:
- *           description: The ID of the series.
- *           type: string
- *           example: ser_cabkj4jeu8be3rap4g
+ *           $ref: '#/components/schemas/seriesId'
  *         name:
- *           description: The name of the series.
- *           type: string
- *           example: Sword of Truth
+ *           $ref: '#/components/schemas/seriesName'
  *         nameIgnorePrefix:
  *           description: The name of the series with any prefix moved to the end.
  *           type: string
@@ -77,9 +84,7 @@ const { getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index
  *           items: 
  *             $ref: '#/components/schemas/libraryItem'
  *         addedAt:
- *           description: The time (in ms since POSIX epoch) when the series was added.
- *           type: integer
- *           example: 1650621073750
+ *           $ref: '#/components/schemas/addedAt'
  *         totalDuration:
  *           description: The combined duration (in seconds) of all books in the series.
  *           type: number
@@ -88,13 +93,9 @@ const { getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index
  *       type: object
  *       properties:
  *         id:
- *           description: The ID of the series.
- *           type: string
- *           example: ser_cabkj4jeu8be3rap4g
+ *           $ref: '#/components/schemas/seriesId'
  *         name:
- *           description: The name of the series.
- *           type: string
- *           example: Sword of Truth
+ *           $ref: '#/components/schemas/seriesName'
  *         sequence:
  *           description: The position in the series the book is.
  *           type: string

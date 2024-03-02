@@ -23,4 +23,12 @@
  *         - Favorite
  *         - Nonfiction/History
  *         - Content: Violence
+ *     size:
+ *       description: The total size (in bytes) of the item or file.
+ *       type: integer
+ *       example: 268824228
+ *     durationSec:
+ *       description: The total length (in seconds) of the item or file.
+ *       type: number
+ *       example: 33854.905
  */

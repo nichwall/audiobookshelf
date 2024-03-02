@@ -16,11 +16,13 @@ const uuidv4 = require("uuid").v4
  *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
  *     folderId:
  *       type: string
+ *       description: Folder ID
  *       anyOf:
  *         - $ref: '#/components/schemas/oldFolderId'
  *         - $ref: '#/components/schemas/newFolderId'
  *     folder:
  *       type: object
+ *       description: Folder used in library
  *       properties:
  *         id:
  *           $ref: '#/components/schemas/folderId'
@@ -31,9 +33,7 @@ const uuidv4 = require("uuid").v4
  *         libraryId:
  *           - $ref: '#/components/schemas/libraryId'
  *         addedAt:
- *           description: The time (in ms since POSIX epoch) when the folder was added. (Read Only)
- *           type: integer
- *           example: 1650462940610
+ *           - $ref: '#/components/schemas/addedAt'
  */
 class Folder {
   constructor(folder = null) {

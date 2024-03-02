@@ -45,8 +45,7 @@ const { secondsToTimestamp } = require('../utils/index')
  *               type: string
  *               example: audio/mpeg
  *             size:
- *               type: integer
- *               example: 23653735
+ *               $ref: '#/components/schemas/size'
  *         pubDate:
  *           description: The RSS feed episode's publication date.
  *           type: string
@@ -65,9 +64,7 @@ const { secondsToTimestamp } = require('../utils/index')
  *           type: boolean
  *           example: false
  *         duration:
- *           description: The duration (in seconds) of the RSS feed episode.
- *           type: number
- *           example: 1454.18449
+ *           $ref: '#/components/schemas/durationSec'
  *         season:
  *           description: The season of the RSS feed episode.
  *           type: [string, 'null']

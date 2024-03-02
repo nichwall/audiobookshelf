@@ -14,9 +14,7 @@
  *           type: number
  *           example: 0
  *         duration:
- *           description: The length (in seconds) of the audio track.
- *           type: number
- *           example: 33854.905
+ *           $ref: '#/components/schemas/durationSec'
  *         title:
  *           description: The filename of the audio file the audio track belongs to.
  *           type: string
