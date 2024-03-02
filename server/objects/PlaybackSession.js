@@ -84,9 +84,7 @@ const VideoMetadata = require('./metadata/VideoMetadata')
  *           type: string
  *           example: /metadata/items/li_bufnnmp4y5o2gbbxfm/cover.jpg
  *         duration:
- *           description: The total duration (in seconds) of the playing item.
- *           type: number
- *           example: 1454.18449
+ *           $ref: '#/components/schemas/durationSec'
  *         playMethod:
  *           description: What play method the playback session is using. See below for values.
  *           type:

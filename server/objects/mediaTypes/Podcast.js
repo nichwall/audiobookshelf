@@ -39,6 +39,7 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *         - $ref: '#/components/schemas/newPodcastEpisodeDownloadId'
  *     podcastBase:
  *       type: object
+ *       description: Base podcast schema
  *       properties:
  *         coverPath:
  *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
@@ -84,6 +85,7 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *                 $ref: '#/components/schemas/podcastEpisode'
  *     podcastMinified:
  *       type: object
+ *       description: A podcast on the server, minified schema
  *       properties:
  *         metadata:
  *           $ref: '#/components/schemas/podcastMetadataMinified'
@@ -121,6 +123,7 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *           $ref: '#/components/schemas/size'
  *     podcastExpanded:
  *       type: object
+ *       description: A podcast on the server, expanded schema
  *       properties:
  *         libraryItemId:
  *           $ref: '#/components/schemas/libraryItemId'
@@ -460,9 +463,7 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *             audioTrack:
  *               $ref: '#/components/schemas/audioTrack'
  *             duration:
- *               description: The total length (in seconds) of the podcast episode.
- *               type: number
- *               example: 1454.18449
+ *               $ref: '#/components/schemas/durationSec'
  *             size:
  *               $ref: '#/components/schemas/size'
  *     podcastEpisodeEnclousure:
