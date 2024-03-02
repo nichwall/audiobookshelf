@@ -520,6 +520,150 @@
         }
       }
     },
+    "/api/libraries/{id}/episode-downloads": {
+      "get": {
+        "operationId": "getEpisodeDownloadsByLibrary",
+        "summary": "Get the episode downloads for a single library by ID",
+        "tags": [
+          "Libraries"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/libraryID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "currentDownload": {
+                      "$ref": "#/components/schemas/podcastEpisodeDownload"
+                    },
+                    "queue": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/podcastEpisodeDownload"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/library404"
+          }
+        }
+      }
+    },
+    "/api/libraries/{id}/items": {
+      "get": {
+        "operationId": "getLibraryItemsFromLibrary",
+        "summary": "Get media items",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/libraryID"
+          },
+          {
+            "$ref": "#/components/parameters/librarySortBy"
+          },
+          {
+            "$ref": "#/components/parameters/librarySortDesc"
+          },
+          {
+            "$ref": "#/components/parameters/libraryLimit"
+          },
+          {
+            "$ref": "#/components/parameters/libraryPage"
+          },
+          {
+            "name": "filterBy",
+            "in": "query",
+            "description": "Filter media items by author",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "description": "Array of library items",
+                      "items": {
+                        "$ref": "#/components/schemas/libraryItem"
+                      }
+                    },
+                    "total": {
+                      "$ref": "#/components/schemas/resultsTotal"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "sortBy": {
+                      "type": "string"
+                    },
+                    "sortDesc": {
+                      "type": "boolean"
+                    },
+                    "filterBy": {
+                      "type": "string"
+                    },
+                    "mediaType": {
+                      "$ref": "#/components/schemas/mediaType"
+                    },
+                    "minified": {
+                      "type": "boolean"
+                    },
+                    "collapseseries": {
+                      "type": "boolean"
+                    },
+                    "include": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/libraries/{id}/issues": {
+      "delete": {
+        "operationId": "deleteLibraryIssuesByID",
+        "summary": "Remove all library items that have issues in the given library.",
+        "tags": [
+          "Libraries"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/libraryID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ok200"
+          },
+          "404": {
+            "$ref": "#/components/responses/library404"
+          }
+        }
+      }
+    },
     "/api/libraries/{id}/collections": {
       "get": {
         "operationId": "getLibraryCollections",
@@ -693,37 +837,46 @@
         "schema": {
           "type": "string"
         }
-      }
-    },
-    "responses": {
-      "library200": {
-        "description": "OK",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/library"
-            }
-          }
+      },
+      "librarySortBy": {
+        "name": "sortBy",
+        "in": "query",
+        "description": "Sort media items by a specific field",
+        "schema": {
+          "type": "string"
         }
       },
-      "library404": {
-        "description": "Library not found or user does not have access to library.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "object",
-              "properties": {
-                "message": {
-                  "type": "string",
-                  "example": "Not found"
-                }
-              }
-            }
-          }
+      "librarySortDesc": {
+        "name": "sortDesc",
+        "in": "query",
+        "description": "Whether to sort in descending order",
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "libraryLimit": {
+        "name": "limit",
+        "in": "query",
+        "description": "Maximum number of items to return. If `0`, no limit will be applied.",
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "libraryPage": {
+        "name": "page",
+        "in": "query",
+        "description": "Page number for pagination. Only applies if a limit has been set.",
+        "schema": {
+          "type": "integer"
         }
       }
     },
     "schemas": {
+      "resultsTotal": {
+        "description": "How many results were returned",
+        "type": "integer",
+        "minimum": 0
+      },
       "backup": {
         "type": "object",
         "properties": {
@@ -763,9 +916,7 @@
             "example": "2022-11-14T0130.audiobookshelf"
           },
           "fileSize": {
-            "description": "The size (in bytes) of the backup file.",
-            "type": "integer",
-            "example": 7776983
+            "$ref": "#/components/schemas/size"
           },
           "createdAt": {
             "$ref": "#/components/schemas/createdAt"
@@ -874,6 +1025,16 @@
             "Content": "Violence"
           }
         ]
+      },
+      "size": {
+        "description": "The total size (in bytes) of the item or file.",
+        "type": "integer",
+        "example": 268824228
+      },
+      "durationSec": {
+        "description": "The total length (in seconds) of the item or file.",
+        "type": "number",
+        "example": 33854.905
       },
       "deviceInfo": {
         "type": "object",
@@ -1087,18 +1248,43 @@
           }
         }
       },
+      "oldSeriesId": {
+        "description": "The ID of series on server version 2.2.23 and before.",
+        "type": "string",
+        "format": "ser_[a-z0-9]{18}",
+        "example": "ser_o78uaoeuh78h6aoeif"
+      },
+      "newSeriesId": {
+        "type": "string",
+        "description": "The ID of series after 2.3.0.",
+        "format": "uuid",
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+      },
+      "seriesId": {
+        "type": "string",
+        "description": "The ID of the series.",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/oldSeriesId"
+          },
+          {
+            "$ref": "#/components/schemas/newSeriesId"
+          }
+        ]
+      },
+      "seriesName": {
+        "description": "The name of the series.",
+        "type": "string",
+        "example": "Sword of Truth"
+      },
       "series": {
         "type": "object",
         "properties": {
           "id": {
-            "description": "The ID of the series.",
-            "type": "string",
-            "example": "ser_cabkj4jeu8be3rap4g"
+            "$ref": "#/components/schemas/seriesId"
           },
           "name": {
-            "description": "The name of the series.",
-            "type": "string",
-            "example": "Sword of Truth"
+            "$ref": "#/components/schemas/seriesName"
           },
           "description": {
             "description": "A description for the series. Will be null if there is none.",
@@ -1119,14 +1305,10 @@
         "type": "object",
         "properties": {
           "id": {
-            "description": "The ID of the series.",
-            "type": "string",
-            "example": "ser_cabkj4jeu8be3rap4g"
+            "$ref": "#/components/schemas/seriesId"
           },
           "name": {
-            "description": "The name of the series.",
-            "type": "string",
-            "example": "Sword of Truth"
+            "$ref": "#/components/schemas/seriesName"
           },
           "nameIgnorePrefix": {
             "description": "The name of the series with any prefix moved to the end.",
@@ -1137,8 +1319,7 @@
             "description": "The IDs of the library items in the series.",
             "type": "array",
             "items": {
-              "type": "string",
-              "example": "li_8gch9ve09orgn4fdz8"
+              "$ref": "#/components/schemas/libraryItemId"
             }
           },
           "numBooks": {
@@ -1152,14 +1333,10 @@
         "type": "object",
         "properties": {
           "id": {
-            "description": "The ID of the series.",
-            "type": "string",
-            "example": "ser_cabkj4jeu8be3rap4g"
+            "$ref": "#/components/schemas/seriesId"
           },
           "name": {
-            "description": "The name of the series.",
-            "type": "string",
-            "example": "Sword of Truth"
+            "$ref": "#/components/schemas/seriesName"
           },
           "nameIgnorePrefix": {
             "description": "The name of the series with any prefix moved to the end.",
@@ -1184,9 +1361,7 @@
             }
           },
           "addedAt": {
-            "description": "The time (in ms since POSIX epoch) when the series was added.",
-            "type": "integer",
-            "example": 1650621073750
+            "$ref": "#/components/schemas/addedAt"
           },
           "totalDuration": {
             "description": "The combined duration (in seconds) of all books in the series.",
@@ -1199,14 +1374,10 @@
         "type": "object",
         "properties": {
           "id": {
-            "description": "The ID of the series.",
-            "type": "string",
-            "example": "ser_cabkj4jeu8be3rap4g"
+            "$ref": "#/components/schemas/seriesId"
           },
           "name": {
-            "description": "The name of the series.",
-            "type": "string",
-            "example": "Sword of Truth"
+            "$ref": "#/components/schemas/seriesName"
           },
           "sequence": {
             "description": "The position in the series the book is.",
@@ -1341,8 +1512,7 @@
                 "example": "audio/mpeg"
               },
               "size": {
-                "type": "integer",
-                "example": 23653735
+                "$ref": "#/components/schemas/size"
               }
             }
           },
@@ -1368,9 +1538,7 @@
             "example": false
           },
           "duration": {
-            "description": "The duration (in seconds) of the RSS feed episode.",
-            "type": "number",
-            "example": 1454.18449
+            "$ref": "#/components/schemas/durationSec"
           },
           "season": {
             "description": "The season of the RSS feed episode.",
@@ -1619,9 +1787,7 @@
             "example": "MP2/3 (MPEG audio layer 2/3)"
           },
           "duration": {
-            "description": "The total length (in seconds) of the audio file.",
-            "type": "number",
-            "example": 6004.6675
+            "$ref": "#/components/schemas/durationSec"
           },
           "bitRate": {
             "description": "The bit rate (in bit/s) of the audio file.",
@@ -1693,9 +1859,7 @@
             "example": 0
           },
           "duration": {
-            "description": "The length (in seconds) of the audio track.",
-            "type": "number",
-            "example": 33854.905
+            "$ref": "#/components/schemas/durationSec"
           },
           "title": {
             "description": "The filename of the audio file the audio track belongs to.",
@@ -1782,6 +1946,7 @@
       },
       "folderId": {
         "type": "string",
+        "description": "Folder ID",
         "anyOf": [
           {
             "$ref": "#/components/schemas/oldFolderId"
@@ -1793,6 +1958,7 @@
       },
       "folder": {
         "type": "object",
+        "description": "Folder used in library",
         "properties": {
           "id": {
             "$ref": "#/components/schemas/folderId"
@@ -1807,11 +1973,11 @@
               "$ref": "#/components/schemas/libraryId"
             }
           ],
-          "addedAt": {
-            "description": "The time (in ms since POSIX epoch) when the folder was added. (Read Only)",
-            "type": "integer",
-            "example": 1650462940610
-          }
+          "addedAt": [
+            {
+              "$ref": "#/components/schemas/addedAt"
+            }
+          ]
         }
       },
       "oldLibraryId": {
@@ -1858,7 +2024,8 @@
           "displayOrder": {
             "type": "integer",
             "description": "Display position of the library in the list of libraries. Must be >= 1.",
-            "example": 1
+            "example": 1,
+            "minimum": 1
           },
           "icon": {
             "type": "string",
@@ -1916,12 +2083,10 @@
               "type": "object",
               "properties": {
                 "id": {
-                  "type": "string",
-                  "example": "ser_cabkj4jeu8be3rap4g"
+                  "$ref": "#/components/schemas/seriesId"
                 },
                 "name": {
-                  "type": "string",
-                  "example": "Sword of Truth"
+                  "$ref": "#/components/schemas/seriesName"
                 }
               }
             }
@@ -1968,6 +2133,7 @@
       },
       "libraryItemBase": {
         "type": "object",
+        "description": "Base library item schema",
         "properties": {
           "id": {
             "$ref": "#/components/schemas/libraryItemId"
@@ -2021,11 +2187,9 @@
             "description": "Whether the library item was scanned and no longer has media files.",
             "type": "boolean"
           },
-          "mediaType": [
-            {
-              "$ref": "#/components/schemas/mediaType"
-            }
-          ]
+          "mediaType": {
+            "$ref": "#/components/schemas/mediaType"
+          }
         }
       },
       "libraryItem": {
@@ -2111,24 +2275,18 @@
                 }
               },
               "size": {
-                "description": "The total size (in bytes) of the library item.",
-                "type": "integer",
-                "example": 268990279
+                "$ref": "#/components/schemas/size"
               }
             }
           }
         ]
       },
-      "book": {
+      "bookBase": {
         "type": "object",
+        "description": "Base book schema",
         "properties": {
           "libraryItemId": {
-            "description": "The ID of the library item that contains the book.",
-            "type": "string",
-            "example": "li_8gch9ve09orgn4fdz8"
-          },
-          "metadata": {
-            "$ref": "#/components/schemas/bookMetadata"
+            "$ref": "#/components/schemas/libraryItemId"
           },
           "coverPath": {
             "description": "The absolute path on the server of the cover file. Will be null if there is no cover.",
@@ -2165,8 +2323,26 @@
           }
         }
       },
+      "book": {
+        "type": "object",
+        "description": "Book schema, contains information about the book library item.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/bookBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "metadata": {
+                "$ref": "#/components/schemas/bookMetadata"
+              }
+            }
+          }
+        ]
+      },
       "bookMinified": {
         "type": "object",
+        "description": "Minified book schema. Does not depend on `bookBase` because there's pretty much no overlap.",
         "properties": {
           "metadata": {
             "$ref": "#/components/schemas/bookMetadataMinified"
@@ -2208,14 +2384,10 @@
             "example": 0
           },
           "duration": {
-            "description": "The total length (in seconds) of the book.",
-            "type": "number",
-            "example": 33854.905
+            "$ref": "#/components/schemas/durationSec"
           },
           "size": {
-            "description": "The total size (in bytes) of the book.",
-            "type": "integer",
-            "example": 268824228
+            "$ref": "#/components/schemas/size"
           },
           "ebookFormat": {
             "description": "The format of ebook of the book. Will be null if the book is an audiobook.",
@@ -2228,65 +2400,32 @@
       },
       "bookExpanded": {
         "type": "object",
-        "properties": {
-          "libraryItemId": {
-            "description": "The ID of the library item that contains the book.",
-            "type": "string",
-            "example": "li_8gch9ve09orgn4fdz8"
+        "description": "Expanded book object. Adds the duration and size of book, along with audio tracks for the book.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/bookBase"
           },
-          "metadata": {
-            "$ref": "#/components/schemas/bookMetadataExpanded"
-          },
-          "coverPath": {
-            "description": "The absolute path on the server of the cover file. Will be null if there is no cover.",
-            "type": [
-              "string",
-              "null"
-            ],
-            "example": "/audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg"
-          },
-          "tags": {
-            "$ref": "#/components/schemas/tags"
-          },
-          "audioFiles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/audioFile"
-            }
-          },
-          "chapters": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/bookChapter"
-            }
-          },
-          "missingParts": {
-            "description": "Any parts missing from the book by track index.",
-            "type": "array",
-            "items": {
-              "type": "integer"
-            }
-          },
-          "ebookFile": {
-            "$ref": "#/components/schemas/ebookFile"
-          },
-          "duration": {
-            "description": "The total length (in seconds) of the book.",
-            "type": "integer",
-            "example": 33854.905
-          },
-          "size": {
-            "description": "The total size (in bytes) of the book.",
-            "type": "integer",
-            "example": 268824228
-          },
-          "tracks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/audioTrack"
+          {
+            "type": "object",
+            "properties": {
+              "metadata": {
+                "$ref": "#/components/schemas/bookMetadataExpanded"
+              },
+              "duration": {
+                "$ref": "#/components/schemas/durationSec"
+              },
+              "size": {
+                "$ref": "#/components/schemas/size"
+              },
+              "tracks": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/audioTrack"
+                }
+              }
             }
           }
-        }
+        ]
       },
       "mediaType": {
         "type": "string",
@@ -2297,7 +2436,7 @@
         ]
       },
       "media": {
-        "description": "The media of the library item.",
+        "description": "The media of the library item, contains the book or podcast object.",
         "oneOf": [
           {
             "$ref": "#/components/schemas/book"
@@ -2376,6 +2515,7 @@
       },
       "podcastBase": {
         "type": "object",
+        "description": "Base podcast schema",
         "properties": {
           "coverPath": {
             "description": "The absolute path on the server of the cover file. Will be null if there is no cover.",
@@ -2444,6 +2584,7 @@
       },
       "podcastMinified": {
         "type": "object",
+        "description": "A podcast on the server, minified schema",
         "properties": {
           "metadata": {
             "$ref": "#/components/schemas/podcastMetadataMinified"
@@ -2490,14 +2631,13 @@
             "example": 3
           },
           "size": {
-            "description": "The total size (in bytes) of the podcast.",
-            "type": "integer",
-            "example": 23706728
+            "$ref": "#/components/schemas/size"
           }
         }
       },
       "podcastExpanded": {
         "type": "object",
+        "description": "A podcast on the server, expanded schema",
         "properties": {
           "libraryItemId": {
             "$ref": "#/components/schemas/libraryItemId"
@@ -2549,9 +2689,7 @@
             "example": 3
           },
           "size": {
-            "description": "The total size (in bytes) of the podcast.",
-            "type": "integer",
-            "example": 23706728
+            "$ref": "#/components/schemas/size"
           }
         }
       },
@@ -2944,14 +3082,10 @@
                 "$ref": "#/components/schemas/audioTrack"
               },
               "duration": {
-                "description": "The total length (in seconds) of the podcast episode.",
-                "type": "number",
-                "example": 1454.18449
+                "$ref": "#/components/schemas/durationSec"
               },
               "size": {
-                "description": "The total size (in bytes) of the podcast episode.",
-                "type": "integer",
-                "example": 23653735
+                "$ref": "#/components/schemas/size"
               }
             }
           }
@@ -2982,7 +3116,10 @@
         }
       },
       "podcastEpisodeDownload": {
-        "type": "object",
+        "type": [
+          "object",
+          "null"
+        ],
         "properties": {
           "id": {
             "$ref": "#/components/schemas/podcastEpisodeDownloadId"
@@ -3268,6 +3405,14 @@
           }
         }
       },
+      "narrators": {
+        "description": "The narrators of the audiobook.",
+        "type": "array",
+        "items": {
+          "type": "string",
+          "example": "Sam Tsoutsouvas"
+        }
+      },
       "bookMetadataBase": {
         "type": "object",
         "properties": {
@@ -3372,12 +3517,7 @@
                 }
               },
               "narrators": {
-                "description": "The narrators of the audiobook.",
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "example": "Sam Tsoutsouvas"
-                }
+                "$ref": "#/components/schemas/narrators"
               },
               "series": {
                 "description": "The series the book belongs to.",
@@ -3470,12 +3610,7 @@
                 }
               },
               "narrators": {
-                "description": "The narrators of the audiobook.",
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "example": "Sam Tsoutsouvas"
-                }
+                "$ref": "#/components/schemas/narrators"
               },
               "series": {
                 "description": "The series the book belongs to.",
@@ -3540,9 +3675,7 @@
             "example": "Wizards First Rule 01.mp3"
           },
           "size": {
-            "description": "The size (in bytes) of the file.",
-            "type": "integer",
-            "example": 48037888
+            "$ref": "#/components/schemas/size"
           },
           "mtimeMs": {
             "description": "The time (in ms since POSIX epoch) when the file was last modified on disk.",
@@ -3830,9 +3963,7 @@
             "example": "/metadata/items/li_bufnnmp4y5o2gbbxfm/cover.jpg"
           },
           "duration": {
-            "description": "The total duration (in seconds) of the playing item.",
-            "type": "number",
-            "example": 1454.18449
+            "$ref": "#/components/schemas/durationSec"
           },
           "playMethod": {
             "description": "What play method the playback session is using. See below for values.",
@@ -4832,6 +4963,32 @@
             "description": "Whether the user can access explicit content.",
             "type": "boolean",
             "example": true
+          }
+        }
+      }
+    },
+    "responses": {
+      "library200": {
+        "description": "OK",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/library"
+            }
+          }
+        }
+      },
+      "ok200": {
+        "description": "OK"
+      },
+      "library404": {
+        "description": "Library not found or user does not have access to library.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "example": "Not found"
+            }
           }
         }
       }

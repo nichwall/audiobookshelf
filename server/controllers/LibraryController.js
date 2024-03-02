@@ -33,6 +33,35 @@ const authorFilters = require('../utils/queries/authorFilters')
  *       required: true
  *       schema:
  *         type: string
+ *     librarySortBy:
+ *       name: sortBy
+ *       in: query
+ *       description: Sort media items by a specific field
+ *       schema:
+ *         type: string
+ *     librarySortDesc:
+ *       name: sortDesc
+ *       in: query
+ *       description: Whether to sort in descending order
+ *       schema:
+ *         type: boolean
+ *     libraryLimit:
+ *       name: limit
+ *       in: query
+ *       description: Maximum number of items to return. If `0`, no limit will be applied.
+ *       schema:
+ *         type: integer
+ *     libraryPage:
+ *       name: page
+ *       in: query
+ *       description: Page number for pagination. Only applies if a limit has been set.
+ *       schema:
+ *         type: integer
+ *   schemas:
+ *     resultsTotal:
+ *       description: How many results were returned
+ *       type: integer
+ *       minimum: 0
  *   responses: 
  *     library200:
  *       description: OK
@@ -40,16 +69,15 @@ const authorFilters = require('../utils/queries/authorFilters')
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/library'
+ *     ok200:
+ *       description: OK
  *     library404:
  *       description: Library not found or user does not have access to library.
  *       content:
- *         application/json:
+ *         text/html:
  *           schema:
- *             type: object
- *             properties:
- *               message:
- *                 type: string
- *                 example: Not found
+ *             type: string
+ *             example: Not found
  */
 
 class LibraryController {
@@ -224,6 +252,33 @@ class LibraryController {
    * Get podcast episodes in download queue
    * @param {*} req 
    * @param {*} res 
+   */
+  /**
+   * @openapi
+   * /api/libraries/{id}/episode-downloads:
+   *   get:
+   *     operationId: getEpisodeDownloadsByLibrary
+   *     summary: Get the episode downloads for a single library by ID
+   *     tags:
+   *       - Libraries
+   *     parameters:
+   *       - $ref: '#/components/parameters/libraryID'
+   *     responses:
+   *       200:
+   *         description: OK
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 currentDownload:
+   *                   $ref: '#/components/schemas/podcastEpisodeDownload'
+   *                 queue:
+   *                   type: array
+   *                   items:
+   *                     $ref: '#/components/schemas/podcastEpisodeDownload'
+   *       404:
+   *         $ref: '#/components/responses/library404'
    */
   async getEpisodeDownloadQueue(req, res) {
     const libraryDownloadQueueDetails = this.podcastManager.getDownloadQueueDetails(req.library.id)
@@ -409,37 +464,24 @@ class LibraryController {
    * @param {import('express').Response} res 
    */
   /**
+   * @openapi
    * /api/libraries/{id}/items:
    *   get:
+   *     operationId: getLibraryItemsFromLibrary
    *     summary: Get media items
    *     parameters:
+   *       - $ref: '#/components/parameters/libraryID'
+   *       - $ref: '#/components/parameters/librarySortBy'
+   *       - $ref: '#/components/parameters/librarySortDesc'
+   *       - $ref: '#/components/parameters/libraryLimit'
+   *       - $ref: '#/components/parameters/libraryPage'
    *       - name: filterBy
    *         in: query
    *         description: Filter media items by author
    *         schema:
    *           type: string
-   *       - name: sortBy
-   *         in: query
-   *         description: Sort media items by a specific field
-   *         schema:
-   *           type: string
-   *       - name: sortDesc
-   *         in: query
-   *         description: Whether to sort in descending order
-   *         schema:
-   *           type: boolean
-   *       - name: limit
-   *         in: query
-   *         description: Maximum number of items to return
-   *         schema:
-   *           type: integer
-   *       - name: page
-   *         in: query
-   *         description: Page number for pagination
-   *         schema:
-   *           type: integer
    *     responses:
-   *       '200':
+   *       200:
    *         description: Successful response
    *         content:
    *           application/json:
@@ -448,10 +490,11 @@ class LibraryController {
    *               properties:
    *                 results:
    *                   type: array
+   *                   description: Array of library items
    *                   items:
-   *                     $ref: '#/components/schemas/MediaItem'
+   *                     $ref: '#/components/schemas/libraryItem'
    *                 total:
-   *                   type: integer
+   *                   $ref: '#/components/schemas/resultsTotal'
    *                 limit:
    *                   type: integer
    *                 page:
@@ -463,7 +506,7 @@ class LibraryController {
    *                 filterBy:
    *                   type: string
    *                 mediaType:
-   *                   type: string
+   *                   $ref: '#/components/schemas/mediaType'
    *                 minified:
    *                   type: boolean
    *                 collapseseries:
@@ -507,6 +550,22 @@ class LibraryController {
    * Remove all library items missing or invalid
    * @param {import('express').Request} req 
    * @param {import('express').Response} res 
+   */
+  /**
+   * @openapi
+   * /api/libraries/{id}/issues:
+   *   delete:
+   *     operationId: deleteLibraryIssuesByID
+   *     summary: Remove all library items that have issues in the given library.
+   *     tags:
+   *       - Libraries
+   *     parameters:
+   *       - $ref: '#/components/parameters/libraryID'
+   *     responses:
+   *       200:
+   *         $ref: '#/components/responses/ok200'
+   *       404:
+   *         $ref: '#/components/responses/library404'
    */
   async removeLibraryItemsWithIssues(req, res) {
     const libraryItemsWithIssues = await Database.libraryItemModel.findAll({
