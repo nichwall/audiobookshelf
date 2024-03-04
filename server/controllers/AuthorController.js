@@ -11,12 +11,148 @@ const AuthorFinder = require('../finders/AuthorFinder')
 
 const { reqSupportsWebp } = require('../utils/index')
 
+/**
+ * @openapi
+ * components:
+ *   parameters:
+ *     authorID:
+ *       name: id
+ *       in: path
+ *       description: Author ID
+ *       required: true
+ *       schema:
+ *         type: string
+ *     authorInclude:
+ *       name: include
+ *       in: query
+ *       description: A comma separated list of what to include with the author. The options are `items` and `series`. `series` will only have an effect if `items` is included.
+ *       required: false
+ *       schema:
+ *         type: string
+ *     authorLibraryId:
+ *       name: library
+ *       in: query
+ *       description: The ID of the library to to include filter included items from.
+ *       required: false
+ *       schema:
+ *         $ref: '#/components/schemas/libraryId'
+ *     asin:
+ *       name: asin
+ *       in: query
+ *       description: The Audible Identifier (ASIN).
+ *       required: false
+ *       schema:
+ *         type: [string, 'null']
+ *     authorSearchName:
+ *       name: q
+ *       in: query
+ *       description: The name of the author to use for searching.
+ *       required: false
+ *       schema:
+ *         type: string
+ *         example: Terry Goodkind
+ *     authorName:
+ *       name: name
+ *       in: query
+ *       description: The name of the author.
+ *       required: false
+ *       schema:
+ *         type: string
+ *         example: Terry Goodkind
+ *     authorDescription:
+ *       name: description
+ *       in: query
+ *       description: A description of the author. Will be null if there is none.
+ *       required: false
+ *       schema:
+ *         type: [string, 'null']
+ *         example: Terry Goodkind is a #1 New York Times Bestselling Author and creator of the critically acclaimed masterwork, ‘The Sword of Truth’. He has written 30+ major, bestselling novels, has been published in more than 20 languages world-wide, and has sold more than 26 Million books. ‘The Sword of Truth’ is a revered literary tour de force, comprised of 17 volumes, borne from over 25 years of dedicated writing.
+ *     authorImagePath:
+ *       name: imagePath
+ *       in: query
+ *       description: The absolute path for the author image. Will be null if there is no image.
+ *       required: false
+ *       schema:
+ *         type: [string, 'null']
+ *         example: /metadata/authors/aut_z3leimgybl7uf3y4ab.jpg
+ *     imageURL:
+ *       name: url
+ *       in: query
+ *       description: The URL of the image to add to the server
+ *       required: true
+ *       schema:
+ *         type: string
+ *     imageWidth:
+ *       name: width
+ *       in: query
+ *       description: The requested width of image in pixels.
+ *       schema:
+ *         type: integer
+ *         default: 400
+ *     imageHeight:
+ *       name: height
+ *       in: query
+ *       description: The requested height of image in pixels. If `null`, the height is scaled to maintain aspect ratio based on the requested width.
+ *       schema:
+ *         type: [integer, 'null']
+ *         default: null
+ *     imageFormat:
+ *       name: format
+ *       in: query
+ *       description: The requested output format.
+ *       schema:
+ *         type: string
+ *         default: jpeg
+ *     imageRaw:
+ *       name: raw
+ *       in: query
+ *       description: Return the raw image without scaling if true.
+ *       schema:
+ *         type: boolean
+ *         default: false
+ *   responses: 
+ *     ok200:
+ *       description: OK
+ *     author404:
+ *       description: Author not found.
+ *       content:
+ *         text/html:
+ *           schema:
+ *             type: string
+ *             example: Not found
+ */
+
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
 class AuthorController {
   constructor() { }
 
+  /**
+   * @openapi
+   * /api/authors/{id}:
+   *   get:
+   *     operationId: getAuthorByID
+   *     summary: Get a single author by ID on server
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *       - $ref: '#/components/parameters/authorInclude'
+   *       - $ref: '#/components/parameters/authorLibraryId'
+   *     responses:
+   *       200:
+   *         description: Author OK
+   *         content:
+   *           application/json:
+   *             schema:
+   *               oneOf:
+   *                 - $ref: '#/components/schemas/author'
+   *                 - $ref: '#/components/schemas/authorWithItems'
+   *                 - $ref: '#/components/schemas/authorWithSeries'
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
   async findOne(req, res) {
     const include = (req.query.include || '').split(',')
 
@@ -63,6 +199,38 @@ class AuthorController {
     return res.json(authorJson)
   }
 
+  /**
+   * @openapi
+   * /api/authors/{id}:
+   *   patch:
+   *     operationId: updateAuthorByID
+   *     summary: Update a single author by ID on server. This endpoint will merge two authors if the new author name matches another author in the database.
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *       - $ref: '#/components/parameters/asin'
+   *       - $ref: '#/components/parameters/authorName'
+   *       - $ref: '#/components/parameters/authorDescription'
+   *       - $ref: '#/components/parameters/authorImagePath'
+   *     responses:
+   *       200:
+   *         description: Author OK
+   *         content:
+   *           application/json:
+   *             schema:
+   *               allOf:
+   *                 - $ref: '#/components/schemas/author'
+   *                 - properties:
+   *                   merged:
+   *                     description: Will only exist and be `true` if the author was merged with another author
+   *                     type: [boolean, 'null']
+   *                   updated:
+   *                     description: Whether the author was updated without errors. Will not exist if author was merged.
+   *                     type: [boolean, 'null']
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
   async update(req, res) {
     const payload = req.body
     let hasUpdated = false
@@ -148,6 +316,22 @@ class AuthorController {
   }
 
   /**
+   * @openapi
+   * /api/authors/{id}:
+   *   delete:
+   *     operationId: deleteAuthorByID
+   *     summary: Delete a single author by ID on server and remove author from all books.
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *     responses:
+   *       200:
+   *         $ref: '#/components/responses/ok200'
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
+  /**
    * DELETE: /api/authors/:id
    * Remove author from all books and delete
    * 
@@ -171,6 +355,28 @@ class AuthorController {
     res.sendStatus(200)
   }
 
+  /**
+   * @openapi
+   * /api/authors/{id}/image:
+   *   post:
+   *     operationId: setAuthorImageByID
+   *     summary: Set an author image using a provided URL.
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *       - $ref: '#/components/parameters/imageURL'
+   *     responses:
+   *       200:
+   *         description: Author OK
+   *         content:
+   *           application/json:
+   *             schema:
+   *               oneOf:
+   *                 - $ref: '#/components/schemas/author'
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
   /**
    * POST: /api/authors/:id/image
    * Upload author image from web URL
@@ -216,6 +422,22 @@ class AuthorController {
   }
 
   /**
+   * @openapi
+   * /api/authors/{id}/image:
+   *   delete:
+   *     operationId: deleteAuthorImageByID
+   *     summary: Delete an author image from the server and remove the image from the database.
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *     responses:
+   *       200:
+   *         $ref: '#/components/responses/ok200'
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
+  /**
    * DELETE: /api/authors/:id/image
    * Remove author image & delete image file
    * 
@@ -240,6 +462,33 @@ class AuthorController {
     })
   }
 
+  /**
+   * @openapi
+   * /api/authors/{id}/match:
+   *   post:
+   *     operationId: matchAuthorByID
+   *     summary: Match the author against Audible using quick match. Quick match updates the author's description and image (if no image already existed) with information from audible. Either `asin` or `q` must be provided, with `asin` taking priority if both are provided.
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *       - $ref: '#/components/parameters/asin'
+   *       - $ref: '#/components/parameters/authorSearchName'
+   *     responses:
+   *       200:
+   *         description: Author OK
+   *         content:
+   *           application/json:
+   *             schema:
+   *               allOf:
+   *                 - $ref: '#/components/schemas/author'
+   *                 - properties:
+   *                   updated:
+   *                     description: Whether the author was updated without errors. Will not exist if author was merged.
+   *                     type: [boolean, 'null']
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
   async match(req, res) {
     let authorData = null
     const region = req.body.region || 'us'
@@ -290,6 +539,31 @@ class AuthorController {
     })
   }
 
+  /**
+   * @openapi
+   * /api/authors/{id}/image:
+   *   patch:
+   *     operationId: getAuthorImageByID
+   *     summary: Return the author image by author ID.
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *       - $ref: '#/components/parameters/imageWidth'
+   *       - $ref: '#/components/parameters/imageHeight'
+   *       - $ref: '#/components/parameters/imageFormat'
+   *       - $ref: '#/components/parameters/imageRaw'
+   *     responses:
+   *       200:
+   *         description: Author OK
+   *         content:
+   *           image/*:
+   *             schema:
+   *               type: string
+   *               format: binary
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
   // GET api/authors/:id/image
   async getImage(req, res) {
     const { query: { width, height, format, raw }, author } = req
