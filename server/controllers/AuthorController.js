@@ -154,6 +154,31 @@ const naturalSort = createNewSortInstance({
 class AuthorController {
   constructor() { }
 
+  /**
+   * @openapi
+   * /api/authors/{id}:
+   *   get:
+   *     operationId: getAuthorByID
+   *     summary: Get a single author by ID on server
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *       - $ref: '#/components/parameters/authorInclude'
+   *       - $ref: '#/components/parameters/authorLibraryId'
+   *     responses:
+   *       200:
+   *         description: Author OK
+   *         content:
+   *           application/json:
+   *             schema:
+   *               oneOf:
+   *                 - $ref: '#/components/schemas/author'
+   *                 - $ref: '#/components/schemas/authorWithItems'
+   *                 - $ref: '#/components/schemas/authorWithSeries'
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
   async findOne(req, res) {
     const include = (req.query.include || '').split(',')
 
