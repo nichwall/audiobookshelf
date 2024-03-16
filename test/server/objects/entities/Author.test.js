@@ -181,6 +181,8 @@ describe('object - Author Class', () => {
 
       const result = author.update({})
       expect(result).to.be.false
+      // Validate OpenAPI spec
+      expect(author.toJSON()).to.satisfySchemaInApiSpec('author')
     })
 
     it('should update properties if they differ in payload', () => {
@@ -199,6 +201,8 @@ describe('object - Author Class', () => {
       expect(result).to.be.true
       expect(author.name).to.equal(payload.name)
       expect(author.description).to.equal(payload.description)
+      // Validate OpenAPI spec
+      expect(author.toJSON()).to.satisfySchemaInApiSpec('author')
     })
 
     it('should not update properties if they are the same in payload', () => {
@@ -218,6 +222,8 @@ describe('object - Author Class', () => {
       // Ensure properties remain unchanged
       expect(author.name).to.equal('John Doe')
       expect(author.description).to.equal('Sample description')
+      // Validate OpenAPI spec
+      expect(author.toJSON()).to.satisfySchemaInApiSpec('author')
     })
 
     it('should ignore extra keys in payload', () => {
@@ -237,6 +243,8 @@ describe('object - Author Class', () => {
       expect(result).to.be.true
       // Ensure extra field is ignored
       expect(author.extraField).to.be.undefined
+      // Validate OpenAPI spec
+      expect(author.toJSON()).to.satisfySchemaInApiSpec('author')
     })
 
     it('should return true if some properties are updated', () => {
@@ -253,6 +261,8 @@ describe('object - Author Class', () => {
 
       const result = author.update(payload)
       expect(result).to.be.true
+      // Validate OpenAPI spec
+      expect(author.toJSON()).to.satisfySchemaInApiSpec('author')
     })
   })
 })
