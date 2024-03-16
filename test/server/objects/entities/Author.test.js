@@ -8,7 +8,7 @@ const Logger = require('../../../../server/Logger')
 
 // Load an OpenAPI file (YAML or JSON) into this plugin
 const path = require('path')
-const specPath = path.resolve('build-docs/spec.yaml')
+const specPath = path.resolve('build-docs/swagger-output.json')
 // Need to use `path.resolve` or the validator gets mad about the path
 chai.use(chaiResponseValidator(specPath))
 
