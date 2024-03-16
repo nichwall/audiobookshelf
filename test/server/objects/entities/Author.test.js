@@ -20,7 +20,6 @@ describe('object - Author Class', () => {
       expect(author.id).to.be.null
       expect(author.asin).to.be.null
       expect(author.name).to.be.null
-      // Add assertions for other properties with default values
     })
 
     it('should initialize with provided author data', () => {
@@ -34,7 +33,9 @@ describe('object - Author Class', () => {
       expect(author.id).to.equal(authorData.id)
       expect(author.asin).to.equal(authorData.asin)
       expect(author.name).to.equal(authorData.name)
-      // Add assertions for other properties with provided values
+
+      // Validate OpenAPI spec
+      expect(author.toJSON()).to.satisfySchemaInApiSpec('author')
     })
   })
 
@@ -49,7 +50,9 @@ describe('object - Author Class', () => {
       author.setData(data, libraryId)
       expect(author.id).to.be.a('string')
       expect(author.name).to.equal(data.name)
-      // Add assertions for other properties
+
+      // Validate OpenAPI spec
+      expect(author.toJSON()).to.satisfySchemaInApiSpec('author')
     })
 
     it('should log error if no name provided', () => {
@@ -62,21 +65,11 @@ describe('object - Author Class', () => {
       expect(loggerErrorSpy.calledOnce).to.be.true
       // Add other assertions if needed
       loggerErrorSpy.restore() // Restore the original method
+
+      // Validate OpenAPI spec
+      expect(author.toJSON()).to.satisfySchemaInApiSpec('author')
     })
   })
-
-  //describe('openAPI schema', () => {
-  //it('should satisfy OpenAPI spec', async () => {
-  //const authorData = {
-  //id: 'author-id',
-  //asin: 'author-asin',
-  //name: 'John Doe',
-  //}
-  //const author = new Author(authorData)
-  //// Assert that the function returns a value satisfying a schema defined in your OpenAPI spec
-  //expect(author.toJSON()).to.satisfySchemaInApiSpec('author')
-  //})
-  //})
 
   // Add more test cases as needed for other methods in the Author class
 })
