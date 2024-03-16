@@ -15,6 +15,8 @@
     "docker-amd64-local": "docker buildx build --platform linux/amd64 --load .  -t advplyr/audiobookshelf-amd64-local",
     "docker-arm64-local": "docker buildx build --platform linux/arm64 --load .  -t advplyr/audiobookshelf-arm64-local",
     "deploy-linux": "node deploy/linux",
+    "swagger": "node swagger",
+    "specTest": "npm run swagger && npm run test",
     "test": "mocha",
     "coverage": "nyc mocha"
   },
