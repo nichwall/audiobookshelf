@@ -2,6 +2,46 @@ const Logger = require('../../Logger')
 const uuidv4 = require("uuid").v4
 const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/parseNameString')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     oldAuthorId:
+ *       description: The ID of authors on server version 2.2.23 and before.
+ *       type: string
+ *       format: "aut_[a-z0-9]{18}"
+ *       example: aut_o78uaoeuh78h6aoeif
+ *     authorId:
+ *       type: string
+ *       anyOf:
+ *         - $ref: '#/components/schemas/oldAuthorId'
+ *         - $ref: '#/components/schemas/newId'
+ *     author:
+ *       type: object
+ *       properties:
+ *         id:
+ *           $ref: '#/components/schemas/authorId'
+ *         asin:
+ *           description: The ASIN of the author. Will be null if unknown.
+ *           type: string
+ *           nullable: true
+ *         name:
+ *           description: The name of the author.
+ *           type: string
+ *           example: Terry Goodkind
+ *         description:
+ *           description: A description of the author. Will be null if there is none.
+ *           type: string
+ *           nullable: true
+ *         imagePath:
+ *           description: The absolute path for the author image. Will be null if there is no image.
+ *           type: string
+ *           nullable: true
+ *         addedAt:
+ *           $ref: '#/components/schemas/addedAt'
+ *         updatedAt:
+ *           $ref: '#/components/schemas/updatedAt'
+ */
 class Author {
   constructor(author) {
     this.id = null

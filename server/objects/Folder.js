@@ -1,5 +1,35 @@
 const uuidv4 = require("uuid").v4
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     oldFolderId:
+ *       type: string
+ *       description: The ID of folders created on server version 2.2.23 and before.
+ *       format: "fol_[a-z0-9]{18}"
+ *       example: fol_o78uaoeuh78h6aoeif
+ *     folderId:
+ *       type: string
+ *       description: Folder ID
+ *       anyOf:
+ *         - $ref: '#/components/schemas/oldFolderId'
+ *         - $ref: '#/components/schemas/newId'
+ *     folder:
+ *       type: object
+ *       description: Folder used in library
+ *       properties:
+ *         id:
+ *           $ref: '#/components/schemas/folderId'
+ *         fullPath:
+ *           description: The path on the server for the folder. (Read Only)
+ *           type: string
+ *           example: /podcasts
+ *         libraryId:
+ *           $ref: '#/components/schemas/libraryId'
+ *         addedAt:
+ *           $ref: '#/components/schemas/addedAt'
+ */
 class Folder {
   constructor(folder = null) {
     this.id = null
