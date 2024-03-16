@@ -6,6 +6,81 @@ const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
 const EBookFile = require('../files/EBookFile')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     bookBase:
+ *       type: object
+ *       description: Base book schema
+ *       properties:
+ *         libraryItemId:
+ *           $ref: '#/components/schemas/libraryItemId'
+ *         coverPath:
+ *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
+ *           type: string
+ *           nullable: true
+ *           example: /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg
+ *         tags:
+ *           $ref: '#/components/schemas/tags'
+ *         audioFiles:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/audioFile'
+ *         chapters:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/bookChapter'
+ *         missingParts:
+ *           description: Any parts missing from the book by track index.
+ *           type: array
+ *           items:
+ *             type: integer
+ *         ebookFile:
+ *           $ref: '#/components/schemas/ebookFile'
+ *     bookMinified:
+ *       type: object
+ *       description: Minified book schema. Does not depend on `bookBase` because there's pretty much no overlap.
+ *       properties:
+ *         metadata:
+ *           $ref: '#/components/schemas/bookMetadataMinified'
+ *         coverPath:
+ *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
+ *           type: string
+ *           nullable: true
+ *           example: /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg
+ *         tags:
+ *           $ref: '#/components/schemas/tags'
+ *         numTracks:
+ *           description: The number of tracks the book's audio files have.
+ *           type: integer
+ *           example: 1
+ *         numAudioFiles:
+ *           description: The number of audio files the book has.
+ *           type: integer
+ *           example: 1
+ *         numChapters:
+ *           description: The number of chapters the book has.
+ *           type: integer
+ *           example: 1
+ *         numMissingParts:
+ *           description: The total number of missing parts the book has.
+ *           type: integer
+ *           example: 0
+ *         numInvalidAudioFiles:
+ *           description: The number of invalid audio files the book has.
+ *           type: integer
+ *           example: 0
+ *         duration:
+ *           $ref: '#/components/schemas/durationSec'
+ *         size:
+ *           $ref: '#/components/schemas/size'
+ *         ebookFormat:
+ *           description: The format of ebook of the book. Will be null if the book is an audiobook.
+ *           type: string
+ *           nullable: true
+ */
+
 class Book {
   constructor(book) {
     this.id = null

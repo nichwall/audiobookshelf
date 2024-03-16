@@ -33,6 +33,9 @@
                   "oneOf": [
                     {
                       "$ref": "#/components/schemas/author"
+                    },
+                    {
+                      "$ref": "#/components/schemas/authorWithItems"
                     }
                   ]
                 }
@@ -245,6 +248,20 @@
         "type": "number",
         "example": 33854.905
       },
+      "tags": {
+        "description": "Tags applied to items.",
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "example": "To Be Read"
+      },
+      "inode": {
+        "description": "The inode of the item in the file system.",
+        "type": "string",
+        "format": "[0-9]*",
+        "example": "649644248522215260"
+      },
       "authorId": {
         "type": "string",
         "description": "The ID of the author.",
@@ -295,6 +312,194 @@
           }
         }
       },
+      "authorWithItems": {
+        "type": "object",
+        "description": "The author schema with an array of items they are associated with.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/author"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "libraryItems": {
+                "description": "The items associated with the author",
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/libraryItemMinified"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "audioFile": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "description": "The index of the audio file.",
+            "type": "integer",
+            "example": 1
+          },
+          "ino": {
+            "$ref": "#/components/schemas/inode"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/fileMetadata"
+          },
+          "addedAt": {
+            "$ref": "#/components/schemas/addedAt"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/updatedAt"
+          },
+          "trackNumFromMeta": {
+            "description": "The track number of the audio file as pulled from the file's metadata. Will be null if unknown.",
+            "type": "integer",
+            "nullable": true,
+            "example": 1
+          },
+          "discNumFromMeta": {
+            "description": "The disc number of the audio file as pulled from the file's metadata. Will be null if unknown.",
+            "type": "string",
+            "nullable": true
+          },
+          "trackNumFromFilename": {
+            "description": "The track number of the audio file as determined from the file's name. Will be null if unknown.",
+            "type": "integer",
+            "nullable": true,
+            "example": 1
+          },
+          "discNumFromFilename": {
+            "description": "The track number of the audio file as determined from the file's name. Will be null if unknown.",
+            "type": "string",
+            "nullable": true
+          },
+          "manuallyVerified": {
+            "description": "Whether the audio file has been manually verified by a user.",
+            "type": "boolean",
+            "example": false
+          },
+          "invalid": {
+            "description": "Whether the audio file is missing from the server.",
+            "type": "boolean",
+            "example": false
+          },
+          "exclude": {
+            "description": "Whether the audio file has been marked for exclusion.",
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "description": "Any error with the audio file. Will be null if there is none.",
+            "type": "string",
+            "nullable": true
+          },
+          "format": {
+            "description": "The format of the audio file.",
+            "type": "string",
+            "example": "MP2/3 (MPEG audio layer 2/3)"
+          },
+          "duration": {
+            "$ref": "#/components/schemas/durationSec"
+          },
+          "bitRate": {
+            "description": "The bit rate (in bit/s) of the audio file.",
+            "type": "integer",
+            "example": 64000
+          },
+          "language": {
+            "description": "The language of the audio file.",
+            "type": "string",
+            "nullable": true
+          },
+          "codec": {
+            "description": "The codec of the audio file.",
+            "type": "string",
+            "example": "mp3"
+          },
+          "timeBase": {
+            "description": "The time base of the audio file.",
+            "type": "string",
+            "example": "1/14112000"
+          },
+          "channels": {
+            "description": "The number of channels the audio file has.",
+            "type": "integer",
+            "example": 2
+          },
+          "channelLayout": {
+            "description": "The layout of the audio file's channels.",
+            "type": "string",
+            "example": "stereo"
+          },
+          "chapters": {
+            "description": "If the audio file is part of an audiobook, the chapters the file contains.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/bookChapter"
+            }
+          },
+          "embeddedCoverArt": {
+            "description": "The type of embedded cover art in the audio file. Will be null if none exists.",
+            "type": "string",
+            "nullable": true
+          },
+          "metaTags": {
+            "$ref": "#/components/schemas/audioMetaTags"
+          },
+          "mimeType": {
+            "description": "The MIME type of the audio file.",
+            "type": "string",
+            "example": "audio/mpeg"
+          }
+        }
+      },
+      "ebookFile": {
+        "type": "object",
+        "nullable": true,
+        "properties": {
+          "ino": {
+            "$ref": "#/components/schemas/inode"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/fileMetadata"
+          },
+          "ebookFormat": {
+            "description": "The ebook format of the ebook file.",
+            "type": "string",
+            "example": "epub"
+          },
+          "addedAt": {
+            "$ref": "#/components/schemas/addedAt"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/updatedAt"
+          }
+        }
+      },
+      "libraryFile": {
+        "type": "object",
+        "properties": {
+          "ino": {
+            "$ref": "#/components/schemas/inode"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/fileMetadata"
+          },
+          "addedAt": {
+            "$ref": "#/components/schemas/addedAt"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/updatedAt"
+          },
+          "fileType": {
+            "description": "The type of file that the library file is (audio, image, etc.).",
+            "type": "string",
+            "example": "audio"
+          }
+        }
+      },
       "folderId": {
         "type": "string",
         "description": "The ID of the folder.",
@@ -332,6 +537,521 @@
         "description": "The ID of the library.",
         "format": "uuid",
         "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+      },
+      "oldLibraryItemId": {
+        "description": "The ID of library items on server version 2.2.23 and before.",
+        "type": "string",
+        "nullable": true,
+        "format": "li_[a-z0-9]{18}",
+        "example": "li_o78uaoeuh78h6aoeif"
+      },
+      "libraryItemId": {
+        "type": "string",
+        "description": "The ID of library items after 2.3.0.",
+        "format": "uuid",
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+      },
+      "libraryItemBase": {
+        "type": "object",
+        "description": "Base library item schema",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/libraryItemId"
+          },
+          "oldLibraryItemId": {
+            "$ref": "#/components/schemas/oldLibraryItemId"
+          },
+          "ino": {
+            "$ref": "#/components/schemas/inode"
+          },
+          "libraryId": {
+            "$ref": "#/components/schemas/libraryId"
+          },
+          "folderId": {
+            "$ref": "#/components/schemas/folderId"
+          },
+          "path": {
+            "description": "The path of the library item on the server.",
+            "type": "string"
+          },
+          "relPath": {
+            "description": "The path, relative to the library folder, of the library item.",
+            "type": "string"
+          },
+          "isFile": {
+            "description": "Whether the library item is a single file in the root of the library folder.",
+            "type": "boolean"
+          },
+          "mtimeMs": {
+            "description": "The time (in ms since POSIX epoch) when the library item was last modified on disk.",
+            "type": "integer"
+          },
+          "ctimeMs": {
+            "description": "The time (in ms since POSIX epoch) when the library item status was changed on disk.",
+            "type": "integer"
+          },
+          "birthtimeMs": {
+            "description": "The time (in ms since POSIX epoch) when the library item was created on disk. Will be 0 if unknown.",
+            "type": "integer"
+          },
+          "addedAt": {
+            "$ref": "#/components/schemas/addedAt"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/updatedAt"
+          },
+          "isMissing": {
+            "description": "Whether the library item was scanned and no longer exists.",
+            "type": "boolean"
+          },
+          "isInvalid": {
+            "description": "Whether the library item was scanned and no longer has media files.",
+            "type": "boolean"
+          },
+          "mediaType": {
+            "$ref": "#/components/schemas/mediaType"
+          }
+        }
+      },
+      "libraryItemMinified": {
+        "type": "object",
+        "description": "A single item on the server, like a book or podcast. Minified media format.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/libraryItemBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "media": {
+                "$ref": "#/components/schemas/mediaMinified"
+              }
+            }
+          }
+        ]
+      },
+      "bookBase": {
+        "type": "object",
+        "description": "Base book schema",
+        "properties": {
+          "libraryItemId": {
+            "$ref": "#/components/schemas/libraryItemId"
+          },
+          "coverPath": {
+            "description": "The absolute path on the server of the cover file. Will be null if there is no cover.",
+            "type": "string",
+            "nullable": true,
+            "example": "/audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg"
+          },
+          "tags": {
+            "$ref": "#/components/schemas/tags"
+          },
+          "audioFiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/audioFile"
+            }
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/bookChapter"
+            }
+          },
+          "missingParts": {
+            "description": "Any parts missing from the book by track index.",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "ebookFile": {
+            "$ref": "#/components/schemas/ebookFile"
+          }
+        }
+      },
+      "bookMinified": {
+        "type": "object",
+        "description": "Minified book schema. Does not depend on `bookBase` because there's pretty much no overlap.",
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/bookMetadataMinified"
+          },
+          "coverPath": {
+            "description": "The absolute path on the server of the cover file. Will be null if there is no cover.",
+            "type": "string",
+            "nullable": true,
+            "example": "/audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg"
+          },
+          "tags": {
+            "$ref": "#/components/schemas/tags"
+          },
+          "numTracks": {
+            "description": "The number of tracks the book's audio files have.",
+            "type": "integer",
+            "example": 1
+          },
+          "numAudioFiles": {
+            "description": "The number of audio files the book has.",
+            "type": "integer",
+            "example": 1
+          },
+          "numChapters": {
+            "description": "The number of chapters the book has.",
+            "type": "integer",
+            "example": 1
+          },
+          "numMissingParts": {
+            "description": "The total number of missing parts the book has.",
+            "type": "integer",
+            "example": 0
+          },
+          "numInvalidAudioFiles": {
+            "description": "The number of invalid audio files the book has.",
+            "type": "integer",
+            "example": 0
+          },
+          "duration": {
+            "$ref": "#/components/schemas/durationSec"
+          },
+          "size": {
+            "$ref": "#/components/schemas/size"
+          },
+          "ebookFormat": {
+            "description": "The format of ebook of the book. Will be null if the book is an audiobook.",
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "mediaType": {
+        "type": "string",
+        "description": "The type of media, will be book or podcast.",
+        "enum": [
+          "book",
+          "podcast"
+        ]
+      },
+      "mediaMinified": {
+        "description": "The minified media of the library item.",
+        "oneOf": null,
+        "$ref": "#/components/schemas/bookMinified"
+      },
+      "audioMetaTags": {
+        "description": "ID3 metadata tags pulled from the audio file on import. Only non-null tags will be returned in requests.",
+        "type": "object",
+        "properties": {
+          "tagAlbum": {
+            "type": "string",
+            "nullable": true,
+            "example": "SOT Bk01"
+          },
+          "tagArtist": {
+            "type": "string",
+            "nullable": true,
+            "example": "Terry Goodkind"
+          },
+          "tagGenre": {
+            "type": "string",
+            "nullable": true,
+            "example": "Audiobook Fantasy"
+          },
+          "tagTitle": {
+            "type": "string",
+            "nullable": true,
+            "example": "Wizards First Rule 01"
+          },
+          "tagSeries": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagSeriesPart": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagTrack": {
+            "type": "string",
+            "nullable": true,
+            "example": "01/20"
+          },
+          "tagDisc": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagSubtitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagAlbumArtist": {
+            "type": "string",
+            "nullable": true,
+            "example": "Terry Goodkind"
+          },
+          "tagDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagComposer": {
+            "type": "string",
+            "nullable": true,
+            "example": "Terry Goodkind"
+          },
+          "tagPublisher": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagComment": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagEncoder": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagEncodedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagIsbn": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagLanguage": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagASIN": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagOverdriveMediaMarker": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagOriginalYear": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagReleaseCountry": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagReleaseType": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagReleaseStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagISRC": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagMusicBrainzTrackId": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagMusicBrainzAlbumId": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagMusicBrainzAlbumArtistId": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagMusicBrainzArtistId": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "narrators": {
+        "description": "The narrators of the audiobook.",
+        "type": "array",
+        "items": {
+          "type": "string",
+          "example": "Sam Tsoutsouvas"
+        }
+      },
+      "bookMetadataBase": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "description": "The title of the book. Will be null if unknown.",
+            "type": "string",
+            "nullable": true,
+            "example": "Wizards First Rule"
+          },
+          "subtitle": {
+            "description": "The subtitle of the book. Will be null if there is no subtitle.",
+            "type": "string",
+            "nullable": true
+          },
+          "genres": {
+            "description": "The genres of the book.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": "Fantasy"
+          },
+          "publishedYear": {
+            "description": "The year the book was published. Will be null if unknown.",
+            "type": "string",
+            "nullable": true,
+            "example": "2008"
+          },
+          "publishedDate": {
+            "description": "The date the book was published. Will be null if unknown.",
+            "type": "string",
+            "nullable": true
+          },
+          "publisher": {
+            "description": "The publisher of the book. Will be null if unknown.",
+            "type": "string",
+            "nullable": true,
+            "example": "Brilliance Audio"
+          },
+          "description": {
+            "description": "A description for the book. Will be null if empty.",
+            "type": "string",
+            "nullable": true,
+            "example": "The masterpiece that started Terry Goodkind's New York Times bestselling epic Sword of Truth In the aftermath of the brutal murder of his father, a mysterious woman, Kahlan Amnell, appears in Richard Cypher's forest sanctuary seeking help...and more. His world, his very beliefs, are shattered when ancient debts come due with thundering violence. In a dark age it takes courage to live, and more than mere courage to challenge those who hold dominion, Richard and Kahlan must take up that challenge or become the next victims. Beyond awaits a bewitching land where even the best of their hearts could betray them. Yet, Richard fears nothing so much as what secrets his sword might reveal about his own soul. Falling in love would destroy them - for reasons Richard can't imagine and Kahlan dare not say. In their darkest hour, hunted relentlessly, tormented by treachery and loss, Kahlan calls upon Richard to reach beyond his sword - to invoke within himself something more noble. Neither knows that the rules of battle have just changed...or that their time has run out. Wizard's First Rule is the beginning. One book. One Rule. Witness the birth of a legend."
+          },
+          "isbn": {
+            "description": "The ISBN of the book. Will be null if unknown.",
+            "type": "string",
+            "nullable": true
+          },
+          "asin": {
+            "description": "The ASIN of the book. Will be null if unknown.",
+            "type": "string",
+            "nullable": true,
+            "example": "B002V0QK4C"
+          },
+          "language": {
+            "description": "The language of the book. Will be null if unknown.",
+            "type": "string",
+            "nullable": true
+          },
+          "explicit": {
+            "description": "Whether the book has been marked as explicit.",
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "bookMetadataMinified": {
+        "type": "object",
+        "description": "The minified metadata for a book in the database.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/bookMetadataBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "titleIgnorePrefix": {
+                "description": "The title of the book with any prefix moved to the end.",
+                "type": "string"
+              },
+              "authorName": {
+                "description": "The name of the book's author(s).",
+                "type": "string",
+                "example": "Terry Goodkind"
+              },
+              "authorNameLF": {
+                "description": "The name of the book's author(s) with last names first.",
+                "type": "string",
+                "example": "Goodkind, Terry"
+              },
+              "narratorName": {
+                "description": "The name of the audiobook's narrator(s).",
+                "type": "string",
+                "example": "Sam Tsoutsouvas"
+              },
+              "seriesName": {
+                "description": "The name of the book's series.",
+                "type": "string",
+                "example": "Sword of Truth"
+              }
+            }
+          }
+        ]
+      },
+      "bookChapter": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "The ID of the book chapter.",
+            "type": "integer",
+            "example": 0
+          },
+          "start": {
+            "description": "When in the book (in seconds) the chapter starts.",
+            "type": "integer",
+            "example": 0
+          },
+          "end": {
+            "description": "When in the book (in seconds) the chapter ends.",
+            "type": "number",
+            "example": 6004.6675
+          },
+          "title": {
+            "description": "The title of the chapter.",
+            "type": "string",
+            "example": "Wizards First Rule 01 Chapter 1"
+          }
+        }
+      },
+      "fileMetadata": {
+        "type": "object",
+        "nullable": true,
+        "properties": {
+          "filename": {
+            "description": "The filename of the file.",
+            "type": "string",
+            "example": "Wizards First Rule 01.mp3"
+          },
+          "ext": {
+            "description": "The file extension of the file.",
+            "type": "string",
+            "example": ".mp3"
+          },
+          "path": {
+            "description": "The absolute path on the server of the file.",
+            "type": "string",
+            "example": "/audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/Terry Goodkind - SOT Bk01 - Wizards First Rule 01.mp3"
+          },
+          "relPath": {
+            "description": "The path of the file, relative to the book's or podcast's folder.",
+            "type": "string",
+            "example": "Wizards First Rule 01.mp3"
+          },
+          "size": {
+            "$ref": "#/components/schemas/size"
+          },
+          "mtimeMs": {
+            "description": "The time (in ms since POSIX epoch) when the file was last modified on disk.",
+            "type": "integer",
+            "example": 1632223180278
+          },
+          "ctimeMs": {
+            "description": "The time (in ms since POSIX epoch) when the file status was changed on disk.",
+            "type": "integer",
+            "example": 1645978261001
+          },
+          "birthtimeMs": {
+            "description": "The time (in ms since POSIX epoch) when the file was created on disk. Will be 0 if unknown.",
+            "type": "integer",
+            "example": 0
+          }
+        }
       }
     }
   },

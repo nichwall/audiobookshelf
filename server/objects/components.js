@@ -22,4 +22,15 @@
  *       description: The total length (in seconds) of the item or file.
  *       type: number
  *       example: 33854.905
+ *     tags:
+ *       description: Tags applied to items.
+ *       type: array
+ *       items:
+ *         type: string
+ *       example: To Be Read
+ *     inode:
+ *       description: The inode of the item in the file system.
+ *       type: string
+ *       format: "[0-9]*"
+ *       example: '649644248522215260'
  */

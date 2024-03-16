@@ -51,6 +51,18 @@ const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/par
  *           $ref: '#/components/schemas/addedAt'
  *         updatedAt:
  *           $ref: '#/components/schemas/updatedAt'
+ *     authorWithItems:
+ *       type: object
+ *       description: The author schema with an array of items they are associated with.
+ *       allOf:
+ *         - $ref: '#/components/schemas/author'
+ *         - type: object
+ *           properties:
+ *             libraryItems:
+ *               description: The items associated with the author
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/libraryItemMinified'
  */
 class Author {
   constructor(author) {
