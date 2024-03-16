@@ -7,6 +7,178 @@
   },
   "paths": {},
   "components": {
+    "parameters": {
+      "authorID": {
+        "name": "id",
+        "in": "path",
+        "description": "Author ID",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/authorId"
+        }
+      },
+      "authorInclude": {
+        "name": "include",
+        "in": "query",
+        "description": "A comma separated list of what to include with the author. The options are `items` and `series`. `series` will only have an effect if `items` is included.",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "example": "items"
+        },
+        "examples": {
+          "empty": {
+            "summary": "Do not return library items",
+            "value": ""
+          },
+          "itemOnly": {
+            "summary": "Only return library items",
+            "value": "items"
+          },
+          "itemsAndSeries": {
+            "summary": "Return library items and series",
+            "value": "items,series"
+          }
+        }
+      },
+      "authorLibraryId": {
+        "name": "library",
+        "in": "query",
+        "description": "The ID of the library to to include filter included items from.",
+        "required": false,
+        "schema": {
+          "$ref": "#/components/schemas/libraryId"
+        }
+      },
+      "asin": {
+        "name": "asin",
+        "in": "query",
+        "description": "The Audible Identifier (ASIN).",
+        "required": false,
+        "schema": {
+          "$ref": "#/components/schemas/authorASIN"
+        }
+      },
+      "authorSearchName": {
+        "name": "q",
+        "in": "query",
+        "description": "The name of the author to use for searching.",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "example": "Terry Goodkind"
+        }
+      },
+      "authorName": {
+        "name": "name",
+        "in": "query",
+        "description": "The new name of the author.",
+        "required": false,
+        "schema": {
+          "$ref": "#/components/schemas/authorName"
+        }
+      },
+      "authorDescription": {
+        "name": "description",
+        "in": "query",
+        "description": "The new description of the author.",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "nullable": true,
+          "example": "Terry Goodkind is a"
+        }
+      },
+      "authorImagePath": {
+        "name": "imagePath",
+        "in": "query",
+        "description": "The new absolute path for the author image.",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "nullable": true,
+          "example": "/metadata/authors/aut_z3leimgybl7uf3y4ab.jpg"
+        }
+      },
+      "imageURL": {
+        "name": "url",
+        "in": "query",
+        "description": "The URL of the image to add to the server",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uri",
+          "example": "https://images-na.ssl-images-amazon.com/images/I/51NoQTm33OL.__01_SX120_CR0,0,120,120__.jpg"
+        }
+      },
+      "imageWidth": {
+        "name": "width",
+        "in": "query",
+        "description": "The requested width of image in pixels.",
+        "schema": {
+          "type": "integer",
+          "default": 400,
+          "example": 400
+        },
+        "example": 400
+      },
+      "imageHeight": {
+        "name": "height",
+        "in": "query",
+        "description": "The requested height of image in pixels. If `null`, the height is scaled to maintain aspect ratio based on the requested width.",
+        "schema": {
+          "type": "integer",
+          "nullable": true,
+          "default": null,
+          "example": 600
+        },
+        "examples": {
+          "scaleHeight": {
+            "summary": "Scale height with width",
+            "value": null
+          },
+          "fixedHeight": {
+            "summary": "Force height of image",
+            "value": 600
+          }
+        }
+      },
+      "imageFormat": {
+        "name": "format",
+        "in": "query",
+        "description": "The requested output format.",
+        "schema": {
+          "type": "string",
+          "default": "jpeg",
+          "example": "webp"
+        }
+      },
+      "imageRaw": {
+        "name": "raw",
+        "in": "query",
+        "description": "Return the raw image without scaling if true.",
+        "schema": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "responses": {
+      "ok200": {
+        "description": "OK"
+      },
+      "author404": {
+        "description": "Author not found.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "example": "Not found"
+            }
+          }
+        }
+      }
+    },
     "schemas": {
       "addedAt": {
         "type": "integer",
@@ -39,6 +211,17 @@
         "format": "uuid",
         "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
       },
+      "authorASIN": {
+        "type": "string",
+        "description": "The Audible identifier (ASIN) of the author. Will be null if unknown. Not the Amazon identifier.",
+        "nullable": true,
+        "example": "B000APZOQA"
+      },
+      "authorName": {
+        "description": "The name of the author.",
+        "type": "string",
+        "example": "Terry Goodkind"
+      },
       "author": {
         "description": "An author object which includes a description and image path.",
         "type": "object",
@@ -47,15 +230,10 @@
             "$ref": "#/components/schemas/authorId"
           },
           "asin": {
-            "description": "The ASIN of the author. Will be null if unknown.",
-            "type": "string",
-            "nullable": true,
-            "example": "B000APZOQA"
+            "$ref": "#/components/schemas/authorASIN"
           },
           "name": {
-            "description": "The name of the author.",
-            "type": "string",
-            "example": "Terry Goodkind"
+            "$ref": "#/components/schemas/authorName"
           },
           "description": {
             "description": "A description of the author. Will be null if there is none.",

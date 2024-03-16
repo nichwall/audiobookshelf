@@ -11,6 +11,15 @@ const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/par
  *       description: The ID of the author.
  *       format: uuid
  *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+ *     authorASIN:
+ *       type: string
+ *       description: The Audible identifier (ASIN) of the author. Will be null if unknown. Not the Amazon identifier.
+ *       nullable: true
+ *       example: B000APZOQA
+ *     authorName:
+ *       description: The name of the author.
+ *       type: string
+ *       example: Terry Goodkind
  *     author:
  *       description: An author object which includes a description and image path.
  *       type: object
@@ -18,14 +27,9 @@ const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/par
  *         id:
  *           $ref: '#/components/schemas/authorId'
  *         asin:
- *           description: The ASIN of the author. Will be null if unknown.
- *           type: string
- *           nullable: true
- *           example: B000APZOQA
+ *           $ref: '#/components/schemas/authorASIN'
  *         name:
- *           description: The name of the author.
- *           type: string
- *           example: Terry Goodkind
+ *           $ref: '#/components/schemas/authorName'
  *         description:
  *           description: A description of the author. Will be null if there is none.
  *           type: string
