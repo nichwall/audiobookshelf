@@ -3,6 +3,21 @@ const Folder = require('./Folder')
 const LibrarySettings = require('./settings/LibrarySettings')
 const { filePathToPOSIX } = require('../utils/fileUtils')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     oldLibraryId:
+ *       type: string
+ *       description: The ID of the libraries created on server version 2.2.23 and before.
+ *       format: "lib_[a-z0-9]{18}"
+ *       example: lib_o78uaoeuh78h6aoeif
+ *     libraryId:
+ *       type: string
+ *       anyOf:
+ *         - $ref: '#/components/schemas/oldLibraryId'
+ *         - $ref: '#/components/schemas/newId'
+ */
 class Library {
   constructor(library = null) {
     this.id = null
