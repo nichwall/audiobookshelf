@@ -20,6 +20,18 @@ const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/par
  *       description: The name of the author.
  *       type: string
  *       example: Terry Goodkind
+ *     authorSeries:
+ *       type: object
+ *       properties:
+ *         id:
+ *           $ref: '#/components/schemas/seriesId'
+ *         name:
+ *           $ref: '#/components/schemas/seriesName'
+ *         items:
+ *           description: The items in the series. Each library item's media's metadata will have a `series` attribute, a `Series Sequence`, which is the matching series.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/libraryItemMinified'
  *     author:
  *       description: An author object which includes a description and image path.
  *       type: object
@@ -63,6 +75,18 @@ const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/par
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/libraryItemMinified'
+ *     authorWithSeries:
+ *       type: object
+ *       description: The author schema with an array of items and series they are associated with.
+ *       allOf:
+ *         - $ref: '#/components/schemas/authorWithItems'
+ *         - type: object
+ *           properties:
+ *             series:
+ *               description: The series associated with the author
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/authorSeries'
  */
 class Author {
   constructor(author) {

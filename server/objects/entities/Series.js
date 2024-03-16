@@ -1,6 +1,20 @@
 const uuidv4 = require("uuid").v4
 const { getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     seriesId:
+ *       type: string
+ *       description: The ID of the series.
+ *       format: uuid
+ *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+ *     seriesName:
+ *       description: The name of the series.
+ *       type: string
+ *       example: Sword of Truth
+ */
 class Series {
   constructor(series) {
     this.id = null
