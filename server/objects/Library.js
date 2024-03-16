@@ -14,9 +14,9 @@ const { filePathToPOSIX } = require('../utils/fileUtils')
  *       example: lib_o78uaoeuh78h6aoeif
  *     libraryId:
  *       type: string
- *       anyOf:
- *         - $ref: '#/components/schemas/oldLibraryId'
- *         - $ref: '#/components/schemas/newId'
+ *       description: The ID of the library.
+ *       format: uuid
+ *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
  */
 class Library {
   constructor(library = null) {

@@ -33,30 +33,14 @@
         "type": "number",
         "example": 33854.905
       },
-      "newId": {
+      "authorId": {
         "type": "string",
-        "description": "The ID for all database entries. Migration occurred in 2.3.0.",
+        "description": "The ID of the author.",
         "format": "uuid",
         "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
       },
-      "oldAuthorId": {
-        "description": "The ID of authors on server version 2.2.23 and before.",
-        "type": "string",
-        "format": "aut_[a-z0-9]{18}",
-        "example": "aut_o78uaoeuh78h6aoeif"
-      },
-      "authorId": {
-        "type": "string",
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/oldAuthorId"
-          },
-          {
-            "$ref": "#/components/schemas/newId"
-          }
-        ]
-      },
       "author": {
+        "description": "An author object which includes a description and image path.",
         "type": "object",
         "properties": {
           "id": {
@@ -65,7 +49,8 @@
           "asin": {
             "description": "The ASIN of the author. Will be null if unknown.",
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "B000APZOQA"
           },
           "name": {
             "description": "The name of the author.",
@@ -75,12 +60,14 @@
           "description": {
             "description": "A description of the author. Will be null if there is none.",
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Terry Goodkind is a #1 New York Times Bestselling Author and creator of the critically acclaimed masterwork,\n‘The Sword of Truth’. He has written 30+ major, bestselling novels, has been published in more than 20\nlanguages world-wide, and has sold more than 26 Million books. ‘The Sword of Truth’ is a revered literary\ntour de force, comprised of 17 volumes, borne from over 25 years of dedicated writing. Terry Goodkind's\nbrilliant books are character-driven stories, with a focus on the complexity of the human psyche. Goodkind\nhas an uncanny grasp for crafting compelling stories about people like you and me, trapped in terrifying\nsituations.\n"
           },
           "imagePath": {
-            "description": "The absolute path for the author image. Will be null if there is no image.",
+            "description": "The absolute path for the author image located in the `metadata/` directory. Will be null if there is no image.",
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "/metadata/authors/aut_bxxbyjiptmgb56yzoz.jpg"
           },
           "addedAt": {
             "$ref": "#/components/schemas/addedAt"
@@ -90,23 +77,11 @@
           }
         }
       },
-      "oldFolderId": {
-        "type": "string",
-        "description": "The ID of folders created on server version 2.2.23 and before.",
-        "format": "fol_[a-z0-9]{18}",
-        "example": "fol_o78uaoeuh78h6aoeif"
-      },
       "folderId": {
         "type": "string",
-        "description": "Folder ID",
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/oldFolderId"
-          },
-          {
-            "$ref": "#/components/schemas/newId"
-          }
-        ]
+        "description": "The ID of the folder.",
+        "format": "uuid",
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
       },
       "folder": {
         "type": "object",
@@ -136,14 +111,9 @@
       },
       "libraryId": {
         "type": "string",
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/oldLibraryId"
-          },
-          {
-            "$ref": "#/components/schemas/newId"
-          }
-        ]
+        "description": "The ID of the library.",
+        "format": "uuid",
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
       }
     }
   },

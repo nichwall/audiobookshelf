@@ -22,9 +22,4 @@
  *       description: The total length (in seconds) of the item or file.
  *       type: number
  *       example: 33854.905
- *     newId:
- *       type: string
- *       description: The ID for all database entries. Migration occurred in 2.3.0.
- *       format: uuid
- *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
  */

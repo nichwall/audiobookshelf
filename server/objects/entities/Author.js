@@ -6,17 +6,13 @@ const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/par
  * @openapi
  * components:
  *   schemas:
- *     oldAuthorId:
- *       description: The ID of authors on server version 2.2.23 and before.
- *       type: string
- *       format: "aut_[a-z0-9]{18}"
- *       example: aut_o78uaoeuh78h6aoeif
  *     authorId:
  *       type: string
- *       anyOf:
- *         - $ref: '#/components/schemas/oldAuthorId'
- *         - $ref: '#/components/schemas/newId'
+ *       description: The ID of the author.
+ *       format: uuid
+ *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
  *     author:
+ *       description: An author object which includes a description and image path.
  *       type: object
  *       properties:
  *         id:
@@ -25,6 +21,7 @@ const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/par
  *           description: The ASIN of the author. Will be null if unknown.
  *           type: string
  *           nullable: true
+ *           example: B000APZOQA
  *         name:
  *           description: The name of the author.
  *           type: string
@@ -33,10 +30,19 @@ const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/par
  *           description: A description of the author. Will be null if there is none.
  *           type: string
  *           nullable: true
+ *           example: |
+ *             Terry Goodkind is a #1 New York Times Bestselling Author and creator of the critically acclaimed masterwork,
+ *             ‘The Sword of Truth’. He has written 30+ major, bestselling novels, has been published in more than 20
+ *             languages world-wide, and has sold more than 26 Million books. ‘The Sword of Truth’ is a revered literary
+ *             tour de force, comprised of 17 volumes, borne from over 25 years of dedicated writing. Terry Goodkind's
+ *             brilliant books are character-driven stories, with a focus on the complexity of the human psyche. Goodkind
+ *             has an uncanny grasp for crafting compelling stories about people like you and me, trapped in terrifying
+ *             situations.
  *         imagePath:
- *           description: The absolute path for the author image. Will be null if there is no image.
+ *           description: The absolute path for the author image located in the `metadata/` directory. Will be null if there is no image.
  *           type: string
  *           nullable: true
+ *           example: /metadata/authors/aut_bxxbyjiptmgb56yzoz.jpg
  *         addedAt:
  *           $ref: '#/components/schemas/addedAt'
  *         updatedAt:

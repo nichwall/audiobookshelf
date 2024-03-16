@@ -4,17 +4,11 @@ const uuidv4 = require("uuid").v4
  * @openapi
  * components:
  *   schemas:
- *     oldFolderId:
- *       type: string
- *       description: The ID of folders created on server version 2.2.23 and before.
- *       format: "fol_[a-z0-9]{18}"
- *       example: fol_o78uaoeuh78h6aoeif
  *     folderId:
  *       type: string
- *       description: Folder ID
- *       anyOf:
- *         - $ref: '#/components/schemas/oldFolderId'
- *         - $ref: '#/components/schemas/newId'
+ *       description: The ID of the folder.
+ *       format: uuid
+ *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
  *     folder:
  *       type: object
  *       description: Folder used in library
