@@ -27,7 +27,7 @@
  *       type: array
  *       items:
  *         type: string
- *       example: To Be Read
+ *       example: ["To Be Read", "Genre: Nonfiction"]
  *     inode:
  *       description: The inode of the item in the file system.
  *       type: string

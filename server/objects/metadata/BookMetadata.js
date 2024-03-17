@@ -29,7 +29,7 @@ const parseNameString = require('../../utils/parsers/parseNameString')
  *           type: array
  *           items:
  *             type: string
- *           example: Fantasy
+ *           example: ["Fantasy", "Sci-Fi", "Nonfiction: History"]
  *         publishedYear:
  *           description: The year the book was published. Will be null if unknown.
  *           type: string

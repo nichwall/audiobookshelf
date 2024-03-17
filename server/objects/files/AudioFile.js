@@ -8,6 +8,7 @@ const FileMetadata = require('../metadata/FileMetadata')
  *   schemas:
  *     audioFile:
  *       type: object
+ *       description: An audio file for a book. Includes audio metadata and track numbers.
  *       properties:
  *         index:
  *           description: The index of the audio file.
@@ -42,15 +43,12 @@ const FileMetadata = require('../metadata/FileMetadata')
  *         manuallyVerified:
  *           description: Whether the audio file has been manually verified by a user.
  *           type: boolean
- *           example: false
  *         invalid:
  *           description: Whether the audio file is missing from the server.
  *           type: boolean
- *           example: false
  *         exclude:
  *           description: Whether the audio file has been marked for exclusion.
  *           type: boolean
- *           example: false
  *         error:
  *           description: Any error with the audio file. Will be null if there is none.
  *           type: string

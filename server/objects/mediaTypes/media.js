@@ -9,5 +9,5 @@
  *     mediaMinified:
  *       description: The minified media of the library item.
  *       oneOf:
- *       $ref: '#/components/schemas/bookMinified'
+ *         - $ref: '#/components/schemas/bookMinified'
  */

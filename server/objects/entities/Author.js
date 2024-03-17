@@ -22,6 +22,7 @@ const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/par
  *       example: Terry Goodkind
  *     authorSeries:
  *       type: object
+ *       description: Series and the included library items that an author has written.
  *       properties:
  *         id:
  *           $ref: '#/components/schemas/seriesId'
@@ -89,13 +90,12 @@ const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/par
  *                 $ref: '#/components/schemas/authorSeries'
  *     authorMinified:
  *       type: object
+ *       description: Minified author object which only contains the author name and ID.
  *       properties:
  *         id:
  *           $ref: '#/components/schemas/authorId'
  *         name:
- *           description: The name of the author.
- *           type: string
- *           example: Terry Goodkind
+ *           $ref: '#/components/schemas/authorName'
  *     authorExpanded:
  *       type: object
  *       description: The author schema with the total number of books in the library.

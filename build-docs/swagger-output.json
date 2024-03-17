@@ -257,7 +257,10 @@
         "items": {
           "type": "string"
         },
-        "example": "To Be Read"
+        "example": [
+          "To Be Read",
+          "Genre: Nonfiction"
+        ]
       },
       "inode": {
         "description": "The inode of the item in the file system.",
@@ -284,6 +287,7 @@
       },
       "authorSeries": {
         "type": "object",
+        "description": "Series and the included library items that an author has written.",
         "properties": {
           "id": {
             "$ref": "#/components/schemas/seriesId"
@@ -377,14 +381,13 @@
       },
       "authorMinified": {
         "type": "object",
+        "description": "Minified author object which only contains the author name and ID.",
         "properties": {
           "id": {
             "$ref": "#/components/schemas/authorId"
           },
           "name": {
-            "description": "The name of the author.",
-            "type": "string",
-            "example": "Terry Goodkind"
+            "$ref": "#/components/schemas/authorName"
           }
         }
       },
@@ -420,6 +423,7 @@
       },
       "audioFile": {
         "type": "object",
+        "description": "An audio file for a book. Includes audio metadata and track numbers.",
         "properties": {
           "index": {
             "description": "The index of the audio file.",
@@ -462,18 +466,15 @@
           },
           "manuallyVerified": {
             "description": "Whether the audio file has been manually verified by a user.",
-            "type": "boolean",
-            "example": false
+            "type": "boolean"
           },
           "invalid": {
             "description": "Whether the audio file is missing from the server.",
-            "type": "boolean",
-            "example": false
+            "type": "boolean"
           },
           "exclude": {
             "description": "Whether the audio file has been marked for exclusion.",
-            "type": "boolean",
-            "example": false
+            "type": "boolean"
           },
           "error": {
             "description": "Any error with the audio file. Will be null if there is none.",
@@ -819,8 +820,11 @@
       },
       "mediaMinified": {
         "description": "The minified media of the library item.",
-        "oneOf": null,
-        "$ref": "#/components/schemas/bookMinified"
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/bookMinified"
+          }
+        ]
       },
       "audioMetaTags": {
         "description": "ID3 metadata tags pulled from the audio file on import. Only non-null tags will be returned in requests.",
@@ -983,7 +987,11 @@
             "items": {
               "type": "string"
             },
-            "example": "Fantasy"
+            "example": [
+              "Fantasy",
+              "Sci-Fi",
+              "Nonfiction: History"
+            ]
           },
           "publishedYear": {
             "description": "The year the book was published. Will be null if unknown.",
