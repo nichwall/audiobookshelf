@@ -9,6 +9,7 @@ const FileMetadata = require('../metadata/FileMetadata')
  *   schemas:
  *     libraryFile:
  *       type: object
+ *       description: A file for a library item.
  *       properties:
  *         ino:
  *           $ref: '#/components/schemas/inode'

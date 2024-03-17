@@ -14,6 +14,11 @@ const { reqSupportsWebp } = require('../utils/index')
 /**
  * @openapi
  * components:
+ *   schemas:
+ *     authorUpdated:
+ *       description: Whether the author was updated without errors. Will not exist if author was merged.
+ *       type: boolean
+ *       nullable: true
  *   parameters:
  *     authorID:
  *       name: id
@@ -146,6 +151,9 @@ const { reqSupportsWebp } = require('../utils/index')
  *           schema:
  *             type: string
  *             example: Not found
+ * tags:
+ *   - name: Authors
+ *     description: Author endpoints
  */
 
 const naturalSort = createNewSortInstance({
@@ -168,7 +176,7 @@ class AuthorController {
    *       - $ref: '#/components/parameters/authorLibraryId'
    *     responses:
    *       200:
-   *         description: Author OK
+   *         description: getAuthorByID OK
    *         content:
    *           application/json:
    *             schema:
@@ -225,6 +233,38 @@ class AuthorController {
     return res.json(authorJson)
   }
 
+  /**
+   * @openapi
+   * /api/authors/{id}:
+   *   patch:
+   *     operationId: updateAuthorByID
+   *     summary: Update a single author by ID on server. This endpoint will merge two authors if the new author name matches another author in the database.
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *       - $ref: '#/components/parameters/asin'
+   *       - $ref: '#/components/parameters/authorName'
+   *       - $ref: '#/components/parameters/authorDescription'
+   *       - $ref: '#/components/parameters/authorImagePath'
+   *     responses:
+   *       200:
+   *         description: updateAuthorByID OK
+   *         content:
+   *           application/json:
+   *             schema:
+   *               allOf:
+   *                 - $ref: '#/components/schemas/author'
+   *                 - $ref: '#/components/schemas/authorUpdated'
+   *                 - type: object
+   *                   properties:
+   *                     merged:
+   *                       description: Will only exist and be `true` if the author was merged with another author
+   *                       type: boolean
+   *                       nullable: true
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
   async update(req, res) {
     const payload = req.body
     let hasUpdated = false
@@ -310,6 +350,22 @@ class AuthorController {
   }
 
   /**
+   * @openapi
+   * /api/authors/{id}:
+   *   delete:
+   *     operationId: deleteAuthorByID
+   *     summary: Delete a single author by ID on server and remove author from all books.
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *     responses:
+   *       200:
+   *         $ref: '#/components/responses/ok200'
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
+  /**
    * DELETE: /api/authors/:id
    * Remove author from all books and delete
    * 
@@ -333,6 +389,28 @@ class AuthorController {
     res.sendStatus(200)
   }
 
+  /**
+   * @openapi
+   * /api/authors/{id}/image:
+   *   post:
+   *     operationId: setAuthorImageByID
+   *     summary: Set an author image using a provided URL.
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *       - $ref: '#/components/parameters/imageURL'
+   *     responses:
+   *       200:
+   *         description: setAuthorImageByID OK
+   *         content:
+   *           application/json:
+   *             schema:
+   *               oneOf:
+   *                 - $ref: '#/components/schemas/author'
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
   /**
    * POST: /api/authors/:id/image
    * Upload author image from web URL
@@ -378,6 +456,22 @@ class AuthorController {
   }
 
   /**
+   * @openapi
+   * /api/authors/{id}/image:
+   *   delete:
+   *     operationId: deleteAuthorImageByID
+   *     summary: Delete an author image from the server and remove the image from the database.
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *     responses:
+   *       200:
+   *         $ref: '#/components/responses/ok200'
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
+  /**
    * DELETE: /api/authors/:id/image
    * Remove author image & delete image file
    * 
@@ -402,6 +496,30 @@ class AuthorController {
     })
   }
 
+  /**
+   * @openapi
+   * /api/authors/{id}/match:
+   *   post:
+   *     operationId: matchAuthorByID
+   *     summary: Match the author against Audible using quick match. Quick match updates the author's description and image (if no image already existed) with information from audible. Either `asin` or `q` must be provided, with `asin` taking priority if both are provided.
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *       - $ref: '#/components/parameters/asin'
+   *       - $ref: '#/components/parameters/authorSearchName'
+   *     responses:
+   *       200:
+   *         description: matchAuthorByID OK
+   *         content:
+   *           application/json:
+   *             schema:
+   *               allOf:
+   *                 - $ref: '#/components/schemas/author'
+   *                 - $ref: '#/components/schemas/authorUpdated'
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
   async match(req, res) {
     let authorData = null
     const region = req.body.region || 'us'
@@ -452,6 +570,31 @@ class AuthorController {
     })
   }
 
+  /**
+   * @openapi
+   * /api/authors/{id}/image:
+   *   patch:
+   *     operationId: getAuthorImageByID
+   *     summary: Return the author image by author ID.
+   *     tags:
+   *       - Authors
+   *     parameters:
+   *       - $ref: '#/components/parameters/authorID'
+   *       - $ref: '#/components/parameters/imageWidth'
+   *       - $ref: '#/components/parameters/imageHeight'
+   *       - $ref: '#/components/parameters/imageFormat'
+   *       - $ref: '#/components/parameters/imageRaw'
+   *     responses:
+   *       200:
+   *         description: getAuthorImageByID OK
+   *         content:
+   *           image/*:
+   *             schema:
+   *               type: string
+   *               format: binary
+   *       404:
+   *         $ref: '#/components/responses/author404'
+   */
   // GET api/authors/:id/image
   async getImage(req, res) {
     const { query: { width, height, format, raw }, author } = req

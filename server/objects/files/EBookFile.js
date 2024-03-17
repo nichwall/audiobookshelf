@@ -6,6 +6,7 @@ const FileMetadata = require('../metadata/FileMetadata')
  *   schemas:
  *     ebookFile:
  *       type: object
+ *       description: An ebook file for a library item.
  *       nullable: true
  *       properties:
  *         ino:

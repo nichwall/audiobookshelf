@@ -37,7 +37,7 @@ const FileMetadata = require('../metadata/FileMetadata')
  *           nullable: true
  *           example: 1
  *         discNumFromFilename:
- *           description: The track number of the audio file as determined from the file's name. Will be null if unknown.
+ *           description: The disc number of the audio file as determined from the file's name. Will be null if unknown.
  *           type: string
  *           nullable: true
  *         manuallyVerified:

@@ -10,6 +10,11 @@ const EBookFile = require('../files/EBookFile')
  * @openapi
  * components:
  *   schemas:
+ *     bookCoverPath:
+ *       description: The absolute path on the server of the cover file. Will be null if there is no cover.
+ *       type: string
+ *       nullable: true
+ *       example: /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg
  *     bookBase:
  *       type: object
  *       description: Base book schema
@@ -17,10 +22,7 @@ const EBookFile = require('../files/EBookFile')
  *         libraryItemId:
  *           $ref: '#/components/schemas/libraryItemId'
  *         coverPath:
- *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
- *           type: string
- *           nullable: true
- *           example: /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg
+ *           $ref: '#/components/schemas/bookCoverPath'
  *         tags:
  *           $ref: '#/components/schemas/tags'
  *         audioFiles:
@@ -45,10 +47,7 @@ const EBookFile = require('../files/EBookFile')
  *         metadata:
  *           $ref: '#/components/schemas/bookMetadataMinified'
  *         coverPath:
- *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
- *           type: string
- *           nullable: true
- *           example: /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg
+ *           $ref: '#/components/schemas/bookCoverPath'
  *         tags:
  *           $ref: '#/components/schemas/tags'
  *         numTracks:

@@ -14,6 +14,7 @@ const parseNameString = require('../../utils/parsers/parseNameString')
  *         example: Sam Tsoutsouvas
  *     bookMetadataBase:
  *       type: object
+ *       description: The base book metadata object for minified, normal, and extended schemas to inherit from.
  *       properties:
  *         title:
  *           description: The title of the book. Will be null if unknown.
@@ -111,6 +112,7 @@ const parseNameString = require('../../utils/parsers/parseNameString')
  *               example: Sword of Truth
  *     bookChapter:
  *       type: object
+ *       description: A book chapter. Includes the title and timestamps.
  *       properties:
  *         id:
  *           description: The ID of the book chapter.

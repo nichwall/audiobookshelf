@@ -4,6 +4,7 @@
  *   schemas:
  *     fileMetadata:
  *       type: object
+ *       description: The metadata for a file, including the path, size, and unix timestamps of the file.
  *       nullable: true
  *       properties:
  *         filename:
