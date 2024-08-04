@@ -105,8 +105,8 @@ paths:
           $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemId'
     post:
       operationId: playLibraryItem
-      summary: Play a book
-      description: Play a book by library item ID.
+      summary: Play a library item
+      description: Play a library item by ID.
       tags:
         - LibraryItem
       parameters:
@@ -140,7 +140,7 @@ paths:
           $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
     post:
       operationId: playLibraryItemPodcastEpisode
-      summary: Play a book
+      summary: Play a podcast episode
       description: Play a podcast by library item ID and episode ID.
       tags:
         - LibraryItem
