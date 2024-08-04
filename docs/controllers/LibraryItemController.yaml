@@ -5,6 +5,7 @@ components:
         in: query
         name: include
         description: A comma separated list of what to include with the library item. The options are progress, rssfeed, authors (for books), and downloads (for podcasts). expanded must be 1 for include to have an effect.
+        allowReserved: true
         schema:
           type: string
       expanded:
