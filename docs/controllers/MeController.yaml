@@ -4,6 +4,14 @@ components:
       description: The total time listened in seconds.
       type: integer
       example: 123456
+  responses:
+    me404:
+      description: Not Found
+      content:
+        html/text:
+          schema:
+            type: string
+            example: Not Found
 paths:
   /api/me:
     get:
@@ -19,7 +27,7 @@ paths:
             application/json:
               schema:
                 $ref: '../objects/entities/User.yaml#/components/schemas/user'
-  /api/me/progress/{libraryItemId}/{episodeId}:
+  /api/me/progress/{libraryItemId}:
     parameters:
       - name: libraryItemId
         in: path
@@ -27,14 +35,8 @@ paths:
         required: true
         schema:
           $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemId'
-      - name: episodeId
-        in: path
-        description: The ID of the episode to get progress for.
-        required: false
-        schema:
-          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
     get:
-      operationId: getProgress
+      operationId: getProgressLibraryItem
       summary: Get the user's progress for a library item.
       description: Get the user's progress for a library item.
       tags:
@@ -47,24 +49,25 @@ paths:
               schema:
                 $ref: '../objects/Media.yaml#/components/schemas/mediaProgress'
         '404':
-          description: Not Found
-          content:
-            html/text:
-              schema:
-                type: string
-                example: Not Found
-  /api/me/progress/{mediaId}:
+          $ref: '#/components/responses/me404'
+  /api/me/progress/{libraryItemId}/{episodeId}:
     parameters:
-      - name: mediaId
+      - name: libraryItemId
         in: path
-        description: The ID of the media progress.
+        description: The ID of the library item.
         required: true
         schema:
-          $ref: '../objects/Media.yaml#/components/schemas/mediaProgressId'
+          $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemId'
+      - name: episodeId
+        in: path
+        description: The ID of the episode to get progress for.
+        required: true
+        schema:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
     get:
-      operationId: getProgressById
-      summary: Get the user's progress for a media item.
-      description: Get the user's progress for a media item.
+      operationId: getProgressPodcastEpisode
+      summary: Get the user's progress for a podcast episode.
+      description: Get the user's progress for a podcast episode.
       tags:
         - Me
       responses:
@@ -75,12 +78,7 @@ paths:
               schema:
                 $ref: '../objects/Media.yaml#/components/schemas/mediaProgress'
         '404':
-          description: Not Found
-          content:
-            html/text:
-              schema:
-                type: string
-                example: Not Found
+          $ref: '#/components/responses/me404'
   /api/me/listening-sessions:
     get:
       operationId: getListeningSessions
