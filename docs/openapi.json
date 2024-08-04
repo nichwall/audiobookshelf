@@ -2210,6 +2210,9 @@
         "summary": "Login to the server",
         "description": "Logs in a client to the server, returning information about the user and server.",
         "operationId": "login",
+        "tags": [
+          "Auth"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2223,11 +2226,7 @@
                   "password": {
                     "$ref": "#/components/schemas/password"
                   }
-                },
-                "required": [
-                  "username",
-                  "password"
-                ]
+                }
               }
             }
           }
@@ -2267,6 +2266,9 @@
         "summary": "Logout from the server",
         "description": "Logs out a client from the server. If the socketId parameter is provided, the server removes the socket from the client list.",
         "operationId": "logout",
+        "tags": [
+          "Auth"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2380,8 +2382,8 @@
       ],
       "post": {
         "operationId": "playLibraryItem",
-        "summary": "Play a book",
-        "description": "Play a book by library item ID.",
+        "summary": "Play a library item",
+        "description": "Play a library item by ID.",
         "tags": [
           "LibraryItem"
         ],
@@ -2442,7 +2444,7 @@
       ],
       "post": {
         "operationId": "playLibraryItemPodcastEpisode",
-        "summary": "Play a book",
+        "summary": "Play a podcast episode",
         "description": "Play a podcast by library item ID and episode ID.",
         "tags": [
           "LibraryItem"
@@ -5813,6 +5815,7 @@
         "in": "query",
         "name": "include",
         "description": "A comma separated list of what to include with the library item. The options are progress, rssfeed, authors (for books), and downloads (for podcasts). expanded must be 1 for include to have an effect.",
+        "allowReserved": true,
         "schema": {
           "type": "string"
         }
