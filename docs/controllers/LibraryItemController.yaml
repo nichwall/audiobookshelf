@@ -23,23 +23,23 @@ paths:
           name: expanded
           description: Whether to return Library Item Expanded instead. 0 for false, 1 for true.
           schema:
-              type: integer
-              example: 1
+            type: integer
+            example: 1
         - in: query
           name: episode
           description: If requesting progress for a podcast, the episode ID to get progress for.
           schema:
-              $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+            $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
       responses:
         '200':
-            description: OK
-            content:
-                application/json:
-                  schema:
-                      type: object
-                      description: TODO
-                      oneOf:
-                        - $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItem'
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: TODO
+                oneOf:
+                  - $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItem'
   /api/items/{id}/play/{episodeId}:
     parameters:
       - name: id
@@ -65,43 +65,43 @@ paths:
           name: deviceInfo
           description: The device information to send to the server.
           schema:
-              $ref: '../objects/entities/Device.yaml#/components/schemas/deviceInfo'
+            $ref: '../objects/entities/Device.yaml#/components/schemas/deviceInfo'
         - in: query
           name: forceDirectPlay
           description: Whether to force direct play of the library item.
           schema:
-              type: boolean
-              example: false
+            type: boolean
+            example: false
         - in: query
           name: forceTranscode
           description: Whether to force transcoding of the library item.
           schema:
-              type: boolean
-              example: false
+            type: boolean
+            example: false
         - in: query
           name: supportedMimeTypes
           description: The supported mime types for the device.
           schema:
-                type: array
-                items:
-                    type: string
+            type: array
+            items:
+              type: string
         - in: query
           name: mediaPlayer
           description: The media player to use.
           schema:
-              type: string
+            type: string
       responses:
         '200':
-            description: OK
-            content:
-                application/json:
-                  schema:
-                      $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSessionExpanded'
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSessionExpanded'
         '404':
-            description: Not Found
-            content:
-                text/html:
-                  schema:
-                      type: string
-                      description: The library item does not have any audio tracks to play.
-                      example: Not Found
+          description: Not Found
+          content:
+            text/html:
+              schema:
+                type: string
+                description: The library item does not have any audio tracks to play.
+                example: Not Found

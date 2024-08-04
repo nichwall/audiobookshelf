@@ -75,10 +75,10 @@ components:
               description: The audio tracks of the media.
               type: array
               items:
-                  $ref: '../files/AudioTrack.yaml#/components/schemas/AudioTrack'
+                $ref: '../files/AudioTrack.yaml#/components/schemas/AudioTrack'
             videoTrack:
               description: The video track of the media. TODO
               type: object
               nullable: true
             libraryItem:
-                $ref: '../LibraryItem.yaml#/components/schemas/libraryItem'
+              $ref: '../LibraryItem.yaml#/components/schemas/libraryItem'
