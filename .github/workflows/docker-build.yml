@@ -21,9 +21,29 @@ on:
       - package.json
 
 jobs:
+  # Check if secrets are set before running the build job
+  check-secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check secrets
+        run: |
+          if [ -z "$DOCKERHUB_USERNAME" ]; then
+            echo "DOCKERHUB_USERNAME is not set"
+            exit 1
+          fi
+          if [ -z "$DOCKERHUB_PASSWORD" ]; then
+            echo "DOCKERHUB_PASSWORD is not set"
+            exit 1
+          fi
+          if [ -z "$GHCR_PASSWORD" ]; then
+            echo "GHCR_PASSWORD is not set"
+            exit 1
+          fi
+
   build:
     # Only run the job if the commit message does not contain 'skip ci' and secrets are set
-    if: "!contains(github.event.head_commit.message, 'skip ci') && secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_PASSWORD && secrets.GHCR_PASSWORD"
+    needs: check-secrets
+    if: "!contains(github.event.head_commit.message, 'skip ci') && needs.check-secrets.result == 'success'"
     runs-on: ubuntu-20.04
 
     steps:
