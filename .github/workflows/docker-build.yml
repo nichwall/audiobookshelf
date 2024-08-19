@@ -29,21 +29,21 @@ jobs:
         run: |
           if [ -z "$DOCKERHUB_USERNAME" ]; then
             echo "DOCKERHUB_USERNAME is not set"
-            exit 1
+            echo "::set-output name=result::failure"
           fi
           if [ -z "$DOCKERHUB_PASSWORD" ]; then
             echo "DOCKERHUB_PASSWORD is not set"
-            exit 1
+            echo "::set-output name=result::failure"
           fi
           if [ -z "$GHCR_PASSWORD" ]; then
             echo "GHCR_PASSWORD is not set"
-            exit 1
+            echo "::set-output name=result::failure"
           fi
 
   build:
     # Only run the job if the commit message does not contain 'skip ci' and secrets are set
     needs: check-secrets
-    if: "!contains(github.event.head_commit.message, 'skip ci') && needs.check-secrets.result == 'success'"
+    if: "!contains(github.event.head_commit.message, 'skip ci') && needs.check-secrets.outputs.result != 'failure'"
     runs-on: ubuntu-20.04
 
     steps:
