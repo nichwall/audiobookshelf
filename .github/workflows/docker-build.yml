@@ -1,5 +1,4 @@
 ---
-
 name: Build and Push Docker Image
 
 on:
@@ -11,7 +10,7 @@ on:
         required: true
         default: 'latest'
   push:
-    branches: [main,master]
+    branches: [main, master]
     tags:
       - 'v*.*.*'
     # Only build when files in these directories have been changed
@@ -23,7 +22,8 @@ on:
 
 jobs:
   build:
-    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    # Only run the job if the commit message does not contain 'skip ci' and secrets are set
+    if: "!contains(github.event.head_commit.message, 'skip ci') && secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_PASSWORD && secrets.GHCR_PASSWORD"
     runs-on: ubuntu-20.04
 
     steps:
