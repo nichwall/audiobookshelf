@@ -557,10 +557,29 @@ class Feed extends Model {
   }
 
   /**
+   * Get the feed image URL with a stable cache-busting timestamp.
+   *
+   * @returns {string}
+   */
+  getCacheBustedImageURL() {
+    if (!this.coverPath || !this.imageURL || !this.entityUpdatedAt) return this.imageURL
+
+    const timestamp = new Date(this.entityUpdatedAt).getTime()
+    if (!Number.isFinite(timestamp)) return this.imageURL
+
+    if (/[?&]ts=[^&]*/.test(this.imageURL)) {
+      return this.imageURL.replace(/([?&])ts=[^&]*/, `$1ts=${timestamp}`)
+    }
+
+    return `${this.imageURL}${this.imageURL.includes('?') ? '&' : '?'}ts=${timestamp}`
+  }
+
+  /**
    *
    * @param {string} hostPrefix
    */
   buildXml(hostPrefix) {
+    const imageURL = this.getCacheBustedImageURL()
     const customElements = [
       { language: this.language || 'en' },
       { author: this.author || 'advplyr' },
@@ -569,7 +588,7 @@ class Feed extends Model {
       {
         'itunes:image': {
           _attr: {
-            href: `${hostPrefix}${this.imageURL}`
+            href: `${hostPrefix}${imageURL}`
           }
         }
       },
@@ -603,7 +622,7 @@ class Feed extends Model {
       generator: 'Audiobookshelf',
       feed_url: `${hostPrefix}${this.feedURL}`,
       site_url: `${hostPrefix}${this.siteURL}`,
-      image_url: `${hostPrefix}${this.imageURL}`,
+      image_url: `${hostPrefix}${imageURL}`,
       custom_namespaces: {
         itunes: 'http://www.itunes.com/dtds/podcast-1.0.dtd',
         podcast: 'https://podcastindex.org/namespace/1.0',
