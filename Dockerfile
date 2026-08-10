@@ -69,5 +69,7 @@ ENV SOURCE="docker"
 ENV NUSQLITE3_DIR=${NUSQLITE3_DIR}
 ENV NUSQLITE3_PATH=${NUSQLITE3_PATH}
 
+HEALTHCHECK --interval=60s --timeout=5s --start-period=10m CMD wget --no-verbose --tries=1 --spider "http://127.0.0.1:${PORT}/healthcheck" || exit 1
+
 ENTRYPOINT ["tini", "--"]
 CMD ["node", "index.js"]
