@@ -30,6 +30,44 @@ describe('fetchUtils', () => {
     expect(fetchStub.firstCall.args[1].redirect).to.equal('manual')
   })
 
+  it('does not forward sensitive headers across origins', async () => {
+    const fetchStub = sinon.stub(global, 'fetch')
+      .onFirstCall().resolves(new Response(null, {
+        status: 302,
+        headers: { location: 'https://redirect.example/result' }
+      }))
+      .onSecondCall().resolves(new Response('ok'))
+
+    await safeFetch('https://provider.example/search', {
+      headers: {
+        Authorization: 'Bearer secret',
+        Cookie: 'session=secret',
+        'X-Request-Id': 'request-id'
+      }
+    })
+
+    const redirectedHeaders = new Headers(fetchStub.secondCall.args[1].headers)
+    expect(redirectedHeaders.get('authorization')).to.equal(null)
+    expect(redirectedHeaders.get('cookie')).to.equal(null)
+    expect(redirectedHeaders.get('x-request-id')).to.equal('request-id')
+  })
+
+  it('keeps sensitive headers on same-origin redirects', async () => {
+    const fetchStub = sinon.stub(global, 'fetch')
+      .onFirstCall().resolves(new Response(null, {
+        status: 302,
+        headers: { location: '/result' }
+      }))
+      .onSecondCall().resolves(new Response('ok'))
+
+    await safeFetch('https://provider.example/search', {
+      headers: { Authorization: 'Bearer secret' }
+    })
+
+    const redirectedHeaders = new Headers(fetchStub.secondCall.args[1].headers)
+    expect(redirectedHeaders.get('authorization')).to.equal('Bearer secret')
+  })
+
   it('passes an Undici dispatcher to protected requests', async () => {
     const fetchStub = sinon.stub(global, 'fetch').resolves(new Response('ok'))
 
