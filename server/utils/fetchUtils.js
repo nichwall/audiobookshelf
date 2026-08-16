@@ -1,6 +1,5 @@
 /**
- * Fetch a successful response, applying the timeout semantics previously
- * provided by Axios. Callers that need a parsed body should use fetchJson.
+ * Fetch a successful response.
  *
  * @param {string|URL} url
  * @param {RequestInit & { timeout?: number }} [options]
@@ -112,11 +111,18 @@ function isRedirect(response) {
   return [301, 302, 303, 307, 308].includes(response.status)
 }
 
-function getRedirectOptions(options, status) {
-  const method = options.method?.toUpperCase()
-  if (status !== 303 && !([301, 302].includes(status) && method === 'POST')) return options
-
+function getRedirectOptions(options, status, currentUrl, nextUrl) {
   const headers = new Headers(options.headers)
+  if (currentUrl.origin !== nextUrl.origin) {
+    headers.delete('authorization')
+    headers.delete('cookie')
+  }
+
+  const method = options.method?.toUpperCase()
+  if (status !== 303 && !([301, 302].includes(status) && method === 'POST')) {
+    return { ...options, headers }
+  }
+
   headers.delete('content-length')
   headers.delete('content-type')
   return { ...options, method: 'GET', body: undefined, headers }
@@ -152,9 +158,10 @@ async function safeFetch(url, { timeout, maxRedirects = 5, signal, ...options } 
     const location = response.headers.get('location')
     if (!location) return response
 
+    const nextUrl = getUrl(new URL(location, currentUrl))
     await response.body?.cancel()
-    currentUrl = getUrl(new URL(location, currentUrl))
-    currentOptions = getRedirectOptions(currentOptions, response.status)
+    currentOptions = getRedirectOptions(currentOptions, response.status, currentUrl, nextUrl)
+    currentUrl = nextUrl
   }
 }
 
