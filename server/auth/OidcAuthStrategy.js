@@ -4,7 +4,7 @@ const OpenIDClient = require('openid-client')
 const Database = require('../Database')
 const Logger = require('../Logger')
 const { getRequestOrigin } = require('../utils/requestUtils')
-const { safeFetchJson } = require('../utils/fetchUtils')
+const { fetchJson } = require('../utils/fetchUtils')
 
 /**
  * OpenID Connect authentication strategy
@@ -452,7 +452,7 @@ class OidcAuthStrategy {
     }
 
     try {
-      const data = await safeFetchJson(configUrl.toString())
+      const data = await fetchJson(configUrl.toString())
       return {
         issuer: data.issuer,
         authorization_endpoint: data.authorization_endpoint,

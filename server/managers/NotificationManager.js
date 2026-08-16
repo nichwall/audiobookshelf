@@ -2,7 +2,7 @@ const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const { notificationData } = require('../utils/notifications')
-const { safeFetchResponse } = require('../utils/fetchUtils')
+const { fetchResponse } = require('../utils/fetchUtils')
 
 class NotificationManager {
   constructor() {
@@ -221,7 +221,7 @@ class NotificationManager {
 
   sendNotification(notification, eventData) {
     const payload = notification.getApprisePayload(eventData)
-    return safeFetchResponse(Database.notificationSettings.appriseApiUrl, {
+    return fetchResponse(Database.notificationSettings.appriseApiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
