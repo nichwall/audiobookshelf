@@ -1,6 +1,6 @@
-const dns = require('node:dns')
 const ipaddr = require('ipaddr.js')
-const { Agent, EnvHttpProxyAgent, getGlobalDispatcher } = require('undici')
+const { Agent, EnvHttpProxyAgent } = require('undici')
+const { resilientLookup } = require('./resilientDns')
 
 /**
  * Get the IP range classification for an address.
@@ -77,7 +77,7 @@ function safeLookup(hostname, options, callback) {
     return
   }
 
-  dns.lookup(hostname, { all: true, verbatim: true }, (error, addresses) => {
+  resilientLookup(hostname, { all: true, verbatim: true }, (error, addresses) => {
     if (error) return callback(error)
 
     const address = addresses.find((result) =>
@@ -104,7 +104,7 @@ const trustedLocalHostnames = new Map()
  * @returns {void}
  */
 function trustedLookup(hostname, options, callback) {
-  dns.lookup(hostname, { all: true, verbatim: true }, (error, addresses) => {
+  resilientLookup(hostname, { all: true, verbatim: true }, (error, addresses) => {
     if (error) return callback(error)
 
     const validAddresses = addresses.filter((result) =>
@@ -122,6 +122,7 @@ function trustedLookup(hostname, options, callback) {
 
 const safeDispatcher = new Agent({ connect: { lookup: safeLookup } })
 const trustedDispatcher = new Agent({ connect: { lookup: trustedLookup } })
+const resilientDispatcher = new Agent({ connect: { lookup: resilientLookup } })
 let proxyDispatcher = null
 
 /**
@@ -141,7 +142,7 @@ function getDispatcher(useSsrfFilter, allowPrivateNetwork = false) {
     return proxyDispatcher
   }
   if (allowPrivateNetwork) return trustedDispatcher
-  return useSsrfFilter ? safeDispatcher : getGlobalDispatcher()
+  return useSsrfFilter ? safeDispatcher : resilientDispatcher
 }
 
 /**

@@ -1,7 +1,7 @@
 const { expect } = require('chai')
 const dns = require('node:dns')
 const sinon = require('sinon')
-const { EnvHttpProxyAgent, getGlobalDispatcher } = require('undici')
+const { Agent, EnvHttpProxyAgent, getGlobalDispatcher } = require('undici')
 const { fetchResponse, safeFetch } = require('../../../server/utils/fetchUtils')
 
 const originalExpProxySupport = process.env.EXP_PROXY_SUPPORT
@@ -96,13 +96,31 @@ describe('fetchUtils', () => {
     await assertLookupRejected(safeFetch('https://example.com'))
   })
 
+  it('applies SSRF filtering to fallback DNS results', async () => {
+    const lookupError = Object.assign(new Error('Temporary failure in name resolution'), { code: 'EAI_AGAIN' })
+    sinon.stub(dns, 'lookup').yields(lookupError)
+    sinon.stub(dns, 'resolve4').yields(null, ['127.0.0.1'])
+    sinon.stub(dns, 'resolve6').yields(Object.assign(new Error('SERVFAIL'), { code: 'ESERVFAIL' }))
+
+    await assertLookupRejected(safeFetch('https://example.com'))
+  })
+
+  it('blocks IPv4-mapped IPv6 fallback DNS results', async () => {
+    const lookupError = Object.assign(new Error('Temporary failure in name resolution'), { code: 'EAI_AGAIN' })
+    sinon.stub(dns, 'lookup').yields(lookupError)
+    sinon.stub(dns, 'resolve4').yields(Object.assign(new Error('SERVFAIL'), { code: 'ESERVFAIL' }))
+    sinon.stub(dns, 'resolve6').yields(null, ['::ffff:127.0.0.1'])
+
+    await assertLookupRejected(safeFetch('https://example.com'))
+  })
+
   it('honors the configured SSRF bypass for private destinations', async () => {
     global.DisableSsrfRequestFilter = () => true
     const fetchStub = sinon.stub(global, 'fetch').resolves(new Response('ok'))
 
     await safeFetch('http://127.0.0.1')
 
-    expect(fetchStub.firstCall.args[1].dispatcher).to.equal(getGlobalDispatcher())
+    expect(fetchStub.firstCall.args[1].dispatcher).not.to.equal(getGlobalDispatcher())
   })
 
   it('allows explicitly trusted private-network destinations', async () => {
@@ -143,7 +161,7 @@ describe('fetchUtils', () => {
   })
 
   it('does not apply the response timeout to the total body duration', async () => {
-    const dispatchStub = sinon.stub(getGlobalDispatcher(), 'dispatch').returns(false)
+    const dispatchStub = sinon.stub(Agent.prototype, 'dispatch').returns(false)
     const fetchStub = sinon.stub(global, 'fetch').callsFake(async () => {
       return new Response(new ReadableStream({
         start(controller) {
