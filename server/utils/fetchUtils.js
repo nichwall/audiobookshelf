@@ -1,36 +1,16 @@
-/**
- * Fetch a successful response.
- *
- * @param {string|URL} url
- * @param {RequestInit & { timeout?: number }} [options]
- * @returns {Promise<Response>}
- */
-async function fetchResponse(url, { timeout, ...options } = {}) {
-  return assertOk(await fetchWithTimeout(url, options, timeout, getDispatcher(false)))
-}
-
-/**
- * @param {string|URL} url
- * @param {RequestInit & { timeout?: number }} [options]
- * @returns {Promise<any>}
- */
-async function fetchJson(url, options) {
-  return (await fetchResponse(url, options)).json()
-}
-
-async function safeFetchResponse(url, options) {
-  return assertOk(await safeFetch(url, options))
-}
-
-async function safeFetchJson(url, options) {
-  return (await safeFetchResponse(url, options)).json()
-}
-
-module.exports = { fetchJson, fetchResponse, safeFetch, safeFetchJson, safeFetchResponse }
 const dns = require('node:dns')
 const ipaddr = require('ipaddr.js')
 const { Agent, EnvHttpProxyAgent, getGlobalDispatcher } = require('undici')
 
+/**
+ * Get the IP range classification for an address.
+ *
+ * IPv4-mapped IPv6 addresses are classified by their embedded IPv4 address so
+ * they cannot bypass the IPv4 restrictions.
+ *
+ * @param {string} address
+ * @returns {string|null}
+ */
 function getAddressRange(address) {
   if (!ipaddr.isValid(address)) return null
 
@@ -41,41 +21,55 @@ function getAddressRange(address) {
   return parsed.range()
 }
 
+/**
+ * Check whether an address is permitted by the SSRF filter.
+ *
+ * Hostnames return true here and receive their definitive validation in
+ * `safeLookup` after DNS resolution.
+ *
+ * @param {string} address
+ * @returns {boolean}
+ */
 function isAllowedAddress(address) {
   const range = getAddressRange(address)
   return range === null || range === 'unicast'
 }
 
-function isAllowedResolvedAddress(address) {
-  return typeof address === 'string' && ipaddr.isValid(address) && getAddressRange(address) === 'unicast'
+/**
+ * Check whether an address belongs to a range blocked by the SSRF filter.
+ *
+ * @param {string} address
+ * @returns {boolean}
+ */
+function isBlockedAddress(address) {
+  const range = getAddressRange(address)
+  return range !== null && range !== 'unicast'
 }
 
-function isPrivateAddress(address) {
-  return typeof address === 'string' && ipaddr.isValid(address) && getAddressRange(address) !== 'unicast'
-}
-
+/**
+ * Parse and validate an HTTP(S) URL.
+ *
+ * @param {string|URL} url
+ * @returns {URL}
+ */
 function getUrl(url) {
   const parsedUrl = new URL(url)
   if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
     throw new Error(`Unsupported URL protocol: ${parsedUrl.protocol}`)
   }
-
-  return parsedUrl
-}
-
-function assertAllowedUrl(url) {
-  const parsedUrl = getUrl(url)
-  const hostname = parsedUrl.hostname.replace(/^\[|\]$/g, '')
-  if (!isAllowedAddress(hostname)) {
-    throw new Error(`Call to ${hostname} is blocked.`)
-  }
   return parsedUrl
 }
 
 /**
- * Resolve every DNS result and hand Undici only an allowed address. Because
- * this lookup is used to create the socket, it cannot be bypassed through a
- * second lookup after validation.
+ * Resolve a hostname for an SSRF-protected connection.
+ *
+ * Only a public unicast address is returned to Undici, which pins validation
+ * and connection establishment to the same DNS result.
+ *
+ * @param {string} hostname
+ * @param {{ all?: boolean }} options
+ * @param {Function} callback
+ * @returns {void}
  */
 function safeLookup(hostname, options, callback) {
   if (!isAllowedAddress(hostname)) {
@@ -86,34 +80,39 @@ function safeLookup(hostname, options, callback) {
   dns.lookup(hostname, { all: true, verbatim: true }, (error, addresses) => {
     if (error) return callback(error)
 
-    // `dns.lookup` normally returns address objects when `all` is enabled, but
-    // do not pass a malformed resolver result to Undici as an undefined IP.
     const address = addresses.find((result) =>
-      isAllowedResolvedAddress(result?.address)
+      typeof result?.address === 'string' && getAddressRange(result.address) === 'unicast'
     )
     if (!address) return callback(new Error(`Call to ${hostname} is blocked.`))
 
-    // Undici requests every address (`all: true`). Match Node's DNS lookup
-    // callback shape in that mode: an array of { address, family } objects.
     if (options.all) return callback(null, [address])
     callback(null, address.address, address.family)
   })
 }
 
-const safeDispatcher = new Agent({ connect: { lookup: safeLookup } })
-// Record how the trusted provider hostname resolved on the connection used for
-// its initial request. Only providers resolving exclusively to blocked/local
-// ranges may carry private-network trust across redirects.
+// A trusted provider may make its initial connection to any address. Record
+// whether that connection resolved exclusively to blocked/local ranges so only
+// genuinely local providers can carry private-network trust across redirects.
 const trustedLocalHostnames = new Map()
 
+/**
+ * Resolve a hostname for an administrator-configured provider.
+ *
+ * @param {string} hostname
+ * @param {{ all?: boolean }} options
+ * @param {Function} callback
+ * @returns {void}
+ */
 function trustedLookup(hostname, options, callback) {
   dns.lookup(hostname, { all: true, verbatim: true }, (error, addresses) => {
     if (error) return callback(error)
 
-    const validAddresses = addresses.filter((result) => typeof result?.address === 'string' && ipaddr.isValid(result.address))
+    const validAddresses = addresses.filter((result) =>
+      typeof result?.address === 'string' && ipaddr.isValid(result.address)
+    )
     if (!validAddresses.length) return callback(new Error(`Unable to resolve ${hostname}.`))
 
-    trustedLocalHostnames.set(hostname, validAddresses.every((result) => isPrivateAddress(result.address)))
+    trustedLocalHostnames.set(hostname, validAddresses.every((result) => isBlockedAddress(result.address)))
     if (options.all) return callback(null, validAddresses)
 
     const address = validAddresses[0]
@@ -121,9 +120,21 @@ function trustedLookup(hostname, options, callback) {
   })
 }
 
+const safeDispatcher = new Agent({ connect: { lookup: safeLookup } })
 const trustedDispatcher = new Agent({ connect: { lookup: trustedLookup } })
 let proxyDispatcher = null
 
+/**
+ * Select the dispatcher for a request.
+ *
+ * Proxy mode intentionally supersedes SSRF filtering. Outside proxy mode,
+ * trusted requests can reach private destinations while protected requests
+ * use the DNS-pinning SSRF dispatcher.
+ *
+ * @param {boolean} useSsrfFilter
+ * @param {boolean} [allowPrivateNetwork=false]
+ * @returns {import('undici').Dispatcher}
+ */
 function getDispatcher(useSsrfFilter, allowPrivateNetwork = false) {
   if (process.env.EXP_PROXY_SUPPORT === '1') {
     if (!proxyDispatcher) proxyDispatcher = new EnvHttpProxyAgent()
@@ -134,43 +145,55 @@ function getDispatcher(useSsrfFilter, allowPrivateNetwork = false) {
 }
 
 /**
- * Apply the configured timeout while connecting and receiving headers. Once
- * headers arrive, Undici's bodyTimeout continues to enforce the same timeout
- * as an inactivity limit between body chunks rather than a total transfer
- * duration.
+ * Fetch a response with Axios-compatible timeout behavior.
+ *
+ * The timer covers connection establishment and response headers. Once the
+ * headers arrive, Undici applies the timeout as the maximum inactivity gap
+ * between response body chunks rather than as a total transfer duration.
+ *
+ * @param {string|URL} url
+ * @param {RequestInit} options
+ * @param {number|undefined} timeout
+ * @param {import('undici').Dispatcher} dispatcher
+ * @returns {Promise<Response>}
  */
 async function fetchWithTimeout(url, options, timeout, dispatcher) {
-  if (!timeout) {
-    return fetch(url, { ...options, dispatcher })
-  }
+  if (!timeout) return fetch(url, { ...options, dispatcher })
 
   const timeoutController = new AbortController()
-  const timeoutHandle = setTimeout(() => timeoutController.abort(new Error(`Request timed out after ${timeout}ms`)), timeout)
+  const timeoutHandle = setTimeout(() => {
+    timeoutController.abort(new Error(`Request timed out after ${timeout}ms`))
+  }, timeout)
   timeoutHandle.unref?.()
+
   const signal = options.signal
     ? AbortSignal.any([options.signal, timeoutController.signal])
     : timeoutController.signal
+  const timeoutDispatcher = dispatcher.compose((dispatch) => (dispatchOptions, handler) => dispatch({
+    ...dispatchOptions,
+    headersTimeout: timeout,
+    bodyTimeout: timeout
+  }, handler))
 
   try {
-    const timeoutDispatcher = dispatcher.compose((dispatch) => (options, handler) => dispatch({
-      ...options,
-      headersTimeout: timeout,
-      bodyTimeout: timeout
-    }, handler))
-    return await fetch(url, {
-      ...options,
-      signal,
-      dispatcher: timeoutDispatcher
-    })
+    return await fetch(url, { ...options, signal, dispatcher: timeoutDispatcher })
   } finally {
     clearTimeout(timeoutHandle)
   }
 }
 
-function isRedirect(response) {
-  return [301, 302, 303, 307, 308].includes(response.status)
-}
-
+/**
+ * Build the request options for a redirect.
+ *
+ * Sensitive credentials are removed when the origin changes. Redirects that
+ * conventionally switch to GET also discard their request body headers.
+ *
+ * @param {RequestInit} options
+ * @param {number} status
+ * @param {URL} currentUrl
+ * @param {URL} nextUrl
+ * @returns {RequestInit}
+ */
 function getRedirectOptions(options, status, currentUrl, nextUrl) {
   const headers = new Headers(options.headers)
   if (currentUrl.origin !== nextUrl.origin) {
@@ -189,8 +212,47 @@ function getRedirectOptions(options, status, currentUrl, nextUrl) {
 }
 
 /**
- * Fetch an external URL with connection-time SSRF protection. Redirects are
- * followed manually so each destination receives the same validation.
+ * Require a successful HTTP response.
+ *
+ * @param {Response} response
+ * @returns {Response}
+ */
+function assertOk(response) {
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+  }
+  return response
+}
+
+/**
+ * Fetch a successful response without SSRF filtering.
+ *
+ * @param {string|URL} url
+ * @param {RequestInit & { timeout?: number }} [options]
+ * @returns {Promise<Response>}
+ */
+async function fetchResponse(url, { timeout, ...options } = {}) {
+  return assertOk(await fetchWithTimeout(url, options, timeout, getDispatcher(false)))
+}
+
+/**
+ * Fetch and parse a successful JSON response without SSRF filtering.
+ *
+ * @param {string|URL} url
+ * @param {RequestInit & { timeout?: number }} [options]
+ * @returns {Promise<any>}
+ */
+async function fetchJson(url, options) {
+  return (await fetchResponse(url, options)).json()
+}
+
+/**
+ * Fetch an external URL with connection-time SSRF protection.
+ *
+ * Redirects are followed manually so every destination is validated. When
+ * `allowPrivateNetwork` is enabled, the administrator-configured initial URL
+ * is trusted, but private redirects remain trusted only if that initial
+ * provider resolved exclusively to blocked/local address ranges.
  *
  * @param {string|URL} url
  * @param {RequestInit & { timeout?: number, maxRedirects?: number, allowPrivateNetwork?: boolean }} [options]
@@ -200,23 +262,26 @@ async function safeFetch(url, { timeout, maxRedirects = 5, signal, allowPrivateN
   let currentUrl = getUrl(url)
   let currentOptions = { ...options, signal }
   const originalHostname = currentUrl.hostname.replace(/^\[|\]$/g, '')
-  let originalProviderIsLocal = isPrivateAddress(originalHostname)
+  let originalProviderIsLocal = isBlockedAddress(originalHostname)
 
   for (let redirectCount = 0; ; redirectCount++) {
     const allowPrivateForRequest = allowPrivateNetwork && (redirectCount === 0 || originalProviderIsLocal)
     const bypassFilter = allowPrivateForRequest || global.DisableSsrfRequestFilter?.(currentUrl.toString())
-    if (!bypassFilter) assertAllowedUrl(currentUrl)
-    const dispatcher = getDispatcher(!bypassFilter, allowPrivateForRequest)
+    if (!bypassFilter) {
+      const hostname = currentUrl.hostname.replace(/^\[|\]$/g, '')
+      if (!isAllowedAddress(hostname)) throw new Error(`Call to ${hostname} is blocked.`)
+    }
+
     const response = await fetchWithTimeout(currentUrl, {
       ...currentOptions,
       redirect: 'manual'
-    }, timeout, dispatcher)
+    }, timeout, getDispatcher(!bypassFilter, allowPrivateForRequest))
 
     if (allowPrivateNetwork && redirectCount === 0 && !originalProviderIsLocal) {
       originalProviderIsLocal = trustedLocalHostnames.get(originalHostname) === true
     }
 
-    if (!isRedirect(response)) return response
+    if (![301, 302, 303, 307, 308].includes(response.status)) return response
     if (redirectCount >= maxRedirects) {
       await response.body?.cancel()
       throw new Error(`Too many redirects while requesting ${currentUrl}`)
@@ -232,9 +297,26 @@ async function safeFetch(url, { timeout, maxRedirects = 5, signal, allowPrivateN
   }
 }
 
-function assertOk(response) {
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-  }
-  return response
+/**
+ * Fetch a successful response with SSRF filtering.
+ *
+ * @param {string|URL} url
+ * @param {RequestInit & { timeout?: number, maxRedirects?: number, allowPrivateNetwork?: boolean }} [options]
+ * @returns {Promise<Response>}
+ */
+async function safeFetchResponse(url, options) {
+  return assertOk(await safeFetch(url, options))
 }
+
+/**
+ * Fetch and parse a successful JSON response with SSRF filtering.
+ *
+ * @param {string|URL} url
+ * @param {RequestInit & { timeout?: number, maxRedirects?: number, allowPrivateNetwork?: boolean }} [options]
+ * @returns {Promise<any>}
+ */
+async function safeFetchJson(url, options) {
+  return (await safeFetchResponse(url, options)).json()
+}
+
+module.exports = { fetchJson, fetchResponse, safeFetch, safeFetchJson, safeFetchResponse }
