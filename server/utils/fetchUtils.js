@@ -6,10 +6,7 @@
  * @returns {Promise<Response>}
  */
 async function fetchResponse(url, { timeout, ...options } = {}) {
-  return assertOk(await fetch(url, {
-    ...options,
-    signal: getRequestSignal(timeout, options.signal)
-  }))
+  return assertOk(await fetchWithTimeout(url, options, timeout, getDispatcher(false)))
 }
 
 /**
@@ -32,7 +29,7 @@ async function safeFetchJson(url, options) {
 module.exports = { fetchJson, fetchResponse, safeFetch, safeFetchJson, safeFetchResponse }
 const dns = require('node:dns')
 const ipaddr = require('ipaddr.js')
-const { Agent } = require('undici')
+const { Agent, EnvHttpProxyAgent, getGlobalDispatcher } = require('undici')
 
 function getAddressRange(address) {
   if (!ipaddr.isValid(address)) return null
@@ -100,11 +97,48 @@ function safeLookup(hostname, options, callback) {
 }
 
 const safeDispatcher = new Agent({ connect: { lookup: safeLookup } })
+let proxyDispatcher = null
 
-function getRequestSignal(timeout, signal) {
-  if (!timeout) return signal
-  const timeoutSignal = AbortSignal.timeout(timeout)
-  return signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal
+function getDispatcher(useSsrfFilter) {
+  if (process.env.EXP_PROXY_SUPPORT === '1') {
+    if (!proxyDispatcher) proxyDispatcher = new EnvHttpProxyAgent()
+    return proxyDispatcher
+  }
+  return useSsrfFilter ? safeDispatcher : getGlobalDispatcher()
+}
+
+/**
+ * Apply the configured timeout while connecting and receiving headers. Once
+ * headers arrive, Undici's bodyTimeout continues to enforce the same timeout
+ * as an inactivity limit between body chunks rather than a total transfer
+ * duration.
+ */
+async function fetchWithTimeout(url, options, timeout, dispatcher) {
+  if (!timeout) {
+    return fetch(url, { ...options, dispatcher })
+  }
+
+  const timeoutController = new AbortController()
+  const timeoutHandle = setTimeout(() => timeoutController.abort(new Error(`Request timed out after ${timeout}ms`)), timeout)
+  timeoutHandle.unref?.()
+  const signal = options.signal
+    ? AbortSignal.any([options.signal, timeoutController.signal])
+    : timeoutController.signal
+
+  try {
+    const timeoutDispatcher = dispatcher.compose((dispatch) => (options, handler) => dispatch({
+      ...options,
+      headersTimeout: timeout,
+      bodyTimeout: timeout
+    }, handler))
+    return await fetch(url, {
+      ...options,
+      signal,
+      dispatcher: timeoutDispatcher
+    })
+  } finally {
+    clearTimeout(timeoutHandle)
+  }
 }
 
 function isRedirect(response) {
@@ -133,21 +167,21 @@ function getRedirectOptions(options, status, currentUrl, nextUrl) {
  * followed manually so each destination receives the same validation.
  *
  * @param {string|URL} url
- * @param {RequestInit & { timeout?: number, maxRedirects?: number }} [options]
+ * @param {RequestInit & { timeout?: number, maxRedirects?: number, allowPrivateNetwork?: boolean }} [options]
  * @returns {Promise<Response>}
  */
-async function safeFetch(url, { timeout, maxRedirects = 5, signal, ...options } = {}) {
+async function safeFetch(url, { timeout, maxRedirects = 5, signal, allowPrivateNetwork = false, ...options } = {}) {
   let currentUrl = getUrl(url)
-  let currentOptions = { ...options, signal: getRequestSignal(timeout, signal) }
+  let currentOptions = { ...options, signal }
 
   for (let redirectCount = 0; ; redirectCount++) {
-    const bypassFilter = global.DisableSsrfRequestFilter?.(currentUrl.toString())
+    const bypassFilter = allowPrivateNetwork || global.DisableSsrfRequestFilter?.(currentUrl.toString())
     if (!bypassFilter) assertAllowedUrl(currentUrl)
-    const response = await fetch(currentUrl, {
+    const dispatcher = getDispatcher(!bypassFilter)
+    const response = await fetchWithTimeout(currentUrl, {
       ...currentOptions,
-      redirect: 'manual',
-      dispatcher: bypassFilter ? undefined : safeDispatcher
-    })
+      redirect: 'manual'
+    }, timeout, dispatcher)
 
     if (!isRedirect(response)) return response
     if (redirectCount >= maxRedirects) {

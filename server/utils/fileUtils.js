@@ -1,5 +1,5 @@
 const Path = require('path')
-const { Readable } = require('node:stream')
+const { Readable, pipeline } = require('node:stream')
 const exec = require('child_process').exec
 const fs = require('../libs/fsExtra')
 const rra = require('../libs/recursiveReaddirAsync')
@@ -329,9 +329,10 @@ module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
           }
         })
 
-        stream.pipe(writer)
-        writer.on('finish', resolve)
-        writer.on('error', reject)
+        pipeline(stream, writer, (error) => {
+          if (error) return reject(error)
+          resolve()
+        })
       })
       .catch((err) => {
         Logger.error(`[fileUtils] Failed to download file "${filepath}"`, err)

@@ -1,12 +1,20 @@
 const { expect } = require('chai')
 const dns = require('node:dns')
 const sinon = require('sinon')
-const { safeFetch } = require('../../../server/utils/fetchUtils')
+const { EnvHttpProxyAgent, getGlobalDispatcher } = require('undici')
+const { fetchResponse, safeFetch } = require('../../../server/utils/fetchUtils')
+
+const originalExpProxySupport = process.env.EXP_PROXY_SUPPORT
 
 describe('fetchUtils', () => {
   afterEach(() => {
     sinon.restore()
     delete global.DisableSsrfRequestFilter
+    if (originalExpProxySupport === undefined) {
+      delete process.env.EXP_PROXY_SUPPORT
+    } else {
+      process.env.EXP_PROXY_SUPPORT = originalExpProxySupport
+    }
   })
 
   it('blocks private, loopback, and IPv4-mapped IPv6 destinations before connecting', async () => {
@@ -94,7 +102,75 @@ describe('fetchUtils', () => {
 
     await safeFetch('http://127.0.0.1')
 
-    expect(fetchStub.firstCall.args[1].dispatcher).to.equal(undefined)
+    expect(fetchStub.firstCall.args[1].dispatcher).to.equal(getGlobalDispatcher())
+  })
+
+  it('allows explicitly trusted private-network destinations', async () => {
+    const fetchStub = sinon.stub(global, 'fetch').resolves(new Response('ok'))
+
+    await safeFetch('http://127.0.0.1', { allowPrivateNetwork: true })
+
+    expect(fetchStub.firstCall.args[1].dispatcher).to.equal(getGlobalDispatcher())
+  })
+
+  it('does not apply the response timeout to the total body duration', async () => {
+    const dispatchStub = sinon.stub(getGlobalDispatcher(), 'dispatch').returns(false)
+    const fetchStub = sinon.stub(global, 'fetch').callsFake(async () => {
+      return new Response(new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('first'))
+          setTimeout(() => {
+            controller.enqueue(new TextEncoder().encode('second'))
+            controller.close()
+          }, 40)
+        }
+      }))
+    })
+
+    const response = await fetchResponse('https://example.com', { timeout: 20 })
+
+    expect(await response.text()).to.equal('firstsecond')
+    const timeoutDispatcher = fetchStub.firstCall.args[1].dispatcher
+    expect(timeoutDispatcher).not.to.equal(getGlobalDispatcher())
+    timeoutDispatcher.dispatch({ origin: 'https://example.com' }, { onError() {} })
+    expect(dispatchStub.firstCall.args[0].headersTimeout).to.equal(20)
+    expect(dispatchStub.firstCall.args[0].bodyTimeout).to.equal(20)
+  })
+
+  it('times out while waiting for response headers', async () => {
+    sinon.stub(global, 'fetch').callsFake((url, options) => {
+      return new Promise((resolve, reject) => {
+        options.signal.addEventListener('abort', () => reject(options.signal.reason), { once: true })
+      })
+    })
+
+    await assertRejected(fetchResponse('https://example.com', { timeout: 10 }), 'Request timed out after 10ms')
+  })
+
+  it('preserves a caller-provided abort signal', async () => {
+    const controller = new AbortController()
+    sinon.stub(global, 'fetch').callsFake((url, options) => {
+      return new Promise((resolve, reject) => {
+        options.signal.addEventListener('abort', () => reject(options.signal.reason), { once: true })
+      })
+    })
+
+    const responsePromise = fetchResponse('https://example.com', {
+      timeout: 1000,
+      signal: controller.signal
+    })
+    controller.abort(new Error('Caller aborted'))
+
+    await assertRejected(responsePromise, 'Caller aborted')
+  })
+
+  it('uses an environment proxy dispatcher when proxy support is enabled', async () => {
+    process.env.EXP_PROXY_SUPPORT = '1'
+    const fetchStub = sinon.stub(global, 'fetch').resolves(new Response('ok'))
+
+    await fetchResponse('https://example.com')
+
+    expect(fetchStub.firstCall.args[1].dispatcher).to.be.instanceOf(EnvHttpProxyAgent)
   })
 })
 

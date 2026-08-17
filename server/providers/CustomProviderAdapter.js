@@ -54,7 +54,7 @@ class CustomProviderAdapter {
       }
     }
 
-    const matches = await safeFetchJson(url, fetchOptions)
+    const matches = await safeFetchJson(url, { ...fetchOptions, allowPrivateNetwork: true })
       .then((data) => {
         if (!data || !Array.isArray(data.matches)) return null
         return data.matches
