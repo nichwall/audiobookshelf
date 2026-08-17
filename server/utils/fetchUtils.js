@@ -50,6 +50,10 @@ function isAllowedResolvedAddress(address) {
   return typeof address === 'string' && ipaddr.isValid(address) && getAddressRange(address) === 'unicast'
 }
 
+function isPrivateAddress(address) {
+  return typeof address === 'string' && ipaddr.isValid(address) && getAddressRange(address) !== 'unicast'
+}
+
 function getUrl(url) {
   const parsedUrl = new URL(url)
   if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
@@ -97,13 +101,35 @@ function safeLookup(hostname, options, callback) {
 }
 
 const safeDispatcher = new Agent({ connect: { lookup: safeLookup } })
+// Record how the trusted provider hostname resolved on the connection used for
+// its initial request. Only providers resolving exclusively to blocked/local
+// ranges may carry private-network trust across redirects.
+const trustedLocalHostnames = new Map()
+
+function trustedLookup(hostname, options, callback) {
+  dns.lookup(hostname, { all: true, verbatim: true }, (error, addresses) => {
+    if (error) return callback(error)
+
+    const validAddresses = addresses.filter((result) => typeof result?.address === 'string' && ipaddr.isValid(result.address))
+    if (!validAddresses.length) return callback(new Error(`Unable to resolve ${hostname}.`))
+
+    trustedLocalHostnames.set(hostname, validAddresses.every((result) => isPrivateAddress(result.address)))
+    if (options.all) return callback(null, validAddresses)
+
+    const address = validAddresses[0]
+    callback(null, address.address, address.family)
+  })
+}
+
+const trustedDispatcher = new Agent({ connect: { lookup: trustedLookup } })
 let proxyDispatcher = null
 
-function getDispatcher(useSsrfFilter) {
+function getDispatcher(useSsrfFilter, allowPrivateNetwork = false) {
   if (process.env.EXP_PROXY_SUPPORT === '1') {
     if (!proxyDispatcher) proxyDispatcher = new EnvHttpProxyAgent()
     return proxyDispatcher
   }
+  if (allowPrivateNetwork) return trustedDispatcher
   return useSsrfFilter ? safeDispatcher : getGlobalDispatcher()
 }
 
@@ -173,15 +199,22 @@ function getRedirectOptions(options, status, currentUrl, nextUrl) {
 async function safeFetch(url, { timeout, maxRedirects = 5, signal, allowPrivateNetwork = false, ...options } = {}) {
   let currentUrl = getUrl(url)
   let currentOptions = { ...options, signal }
+  const originalHostname = currentUrl.hostname.replace(/^\[|\]$/g, '')
+  let originalProviderIsLocal = isPrivateAddress(originalHostname)
 
   for (let redirectCount = 0; ; redirectCount++) {
-    const bypassFilter = allowPrivateNetwork || global.DisableSsrfRequestFilter?.(currentUrl.toString())
+    const allowPrivateForRequest = allowPrivateNetwork && (redirectCount === 0 || originalProviderIsLocal)
+    const bypassFilter = allowPrivateForRequest || global.DisableSsrfRequestFilter?.(currentUrl.toString())
     if (!bypassFilter) assertAllowedUrl(currentUrl)
-    const dispatcher = getDispatcher(!bypassFilter)
+    const dispatcher = getDispatcher(!bypassFilter, allowPrivateForRequest)
     const response = await fetchWithTimeout(currentUrl, {
       ...currentOptions,
       redirect: 'manual'
     }, timeout, dispatcher)
+
+    if (allowPrivateNetwork && redirectCount === 0 && !originalProviderIsLocal) {
+      originalProviderIsLocal = trustedLocalHostnames.get(originalHostname) === true
+    }
 
     if (!isRedirect(response)) return response
     if (redirectCount >= maxRedirects) {

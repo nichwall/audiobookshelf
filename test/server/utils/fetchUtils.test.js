@@ -110,7 +110,36 @@ describe('fetchUtils', () => {
 
     await safeFetch('http://127.0.0.1', { allowPrivateNetwork: true })
 
-    expect(fetchStub.firstCall.args[1].dispatcher).to.equal(getGlobalDispatcher())
+    expect(fetchStub.firstCall.args[1].dispatcher).not.to.equal(getGlobalDispatcher())
+  })
+
+  it('blocks a private redirect from a trusted public provider', async () => {
+    const fetchStub = sinon.stub(global, 'fetch').resolves(new Response(null, {
+      status: 302,
+      headers: { location: 'http://127.0.0.1/result' }
+    }))
+
+    await assertRejected(safeFetch('https://provider.example/search', {
+      allowPrivateNetwork: true
+    }), 'Call to 127.0.0.1 is blocked.')
+
+    sinon.assert.calledOnce(fetchStub)
+  })
+
+  it('allows a private redirect when the trusted provider is local', async () => {
+    const fetchStub = sinon.stub(global, 'fetch')
+      .onFirstCall().resolves(new Response(null, {
+        status: 302,
+        headers: { location: 'http://192.168.1.10/result' }
+      }))
+      .onSecondCall().resolves(new Response('ok'))
+
+    const response = await safeFetch('http://127.0.0.1/search', {
+      allowPrivateNetwork: true
+    })
+
+    expect(await response.text()).to.equal('ok')
+    sinon.assert.calledTwice(fetchStub)
   })
 
   it('does not apply the response timeout to the total body duration', async () => {
