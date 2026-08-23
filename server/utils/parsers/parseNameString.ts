@@ -3,11 +3,24 @@
 //   accepts comma separated lists e.g. "Jon Smith, Jane Smith" or "Smith, Jon, Smith, Jane"
 //   can be separated by "&" e.g. "Jon Smith & Jane Smith" or "Smith, Jon & Smith, Jane"
 //
-const parseFullName = require('./parseFullName')
+const parseFullName: (name: string) => ParsedFullName = require('./parseFullName')
 
-function parseName(name) {
-  var parts = parseFullName(name)
-  var firstName = parts.first
+type ParsedFullName = {
+  first?: string
+  middle?: string
+  last?: string
+}
+
+type ParsedName = {
+  first_name?: string
+  last_name?: string
+}
+
+type NonEmptyParsedName = ParsedName & ({ first_name: string } | { last_name: string })
+
+function parseName(name: string): ParsedName {
+  const parts = parseFullName(name)
+  let firstName = parts.first
   if (firstName && parts.middle) firstName += ' ' + parts.middle
 
   return {
@@ -18,18 +31,26 @@ function parseName(name) {
 
 // Check if this name segment is of the format "Last, First" or "First Last"
 // return true is "Last, First"
-function checkIsALastName(name) {
+function checkIsALastName(name: string): boolean {
   if (!name.includes(' ')) return true // No spaces must be a Last name
 
-  var parsed = parseFullName(name)
+  const parsed = parseFullName(name)
   if (!parsed.first) return true // had spaces but not a first name i.e. "von Mises", must be last name only
 
   return false
 }
 
+function hasNameParts(name: ParsedName): name is NonEmptyParsedName {
+  return Boolean(name.first_name || name.last_name)
+}
+
+function formatName(name: NonEmptyParsedName): string {
+  return name.first_name ? `${name.first_name} ${name.last_name}` : name.last_name || ''
+}
+
 // Handle name already in First Last format and return Last, First
-module.exports.nameToLastFirst = (firstLast) => {
-  var nameObj = parseName(firstLast)
+export function nameToLastFirst(firstLast: string): string | undefined {
+  const nameObj = parseName(firstLast)
   if (!nameObj.last_name) return nameObj.first_name
   else if (!nameObj.first_name) return nameObj.last_name
   return `${nameObj.last_name}, ${nameObj.first_name}`
@@ -41,10 +62,10 @@ module.exports.nameToLastFirst = (firstLast) => {
  * @param {string} nameString - The name string to parse
  * @returns {{ names: string[] }} Array of names
  */
-module.exports.parse = (nameString) => {
+export function parse(nameString: string): { names: string[] } | null {
   if (!nameString) return null
 
-  let splitNames = []
+  let splitNames: string[] = []
   const isCommaSeparated = nameString.includes(',')
 
   // Example &LF: Friedman, Milton & Friedman, Rose
@@ -66,7 +87,7 @@ module.exports.parse = (nameString) => {
     }
   }
 
-  let names = []
+  let names: ParsedName[] = []
 
   // 1 name FIRST LAST
   if (splitNames.length === 1) {
@@ -74,18 +95,18 @@ module.exports.parse = (nameString) => {
   } else {
     // Determines whether this is formatted as last, first or first last (only if using comma separator)
     // Example: "Smith; James Jones" -> ["Smith", "James Jones"]
-    let firstChunkIsALastName = !isCommaSeparated ? false : checkIsALastName(splitNames[0])
-    let isEvenNum = splitNames.length % 2 === 0
+    const firstChunkIsALastName = !isCommaSeparated ? false : checkIsALastName(splitNames[0])
+    const isEvenNum = splitNames.length % 2 === 0
 
     if (!isEvenNum && firstChunkIsALastName) {
       splitNames = splitNames.slice(0, splitNames.length - 1)
     }
 
     if (firstChunkIsALastName) {
-      var num = splitNames.length / 2
+      const num = splitNames.length / 2
       for (let i = 0; i < num; i++) {
-        var last = splitNames.shift()
-        var first = splitNames.shift()
+        const last = splitNames.shift()
+        const first = splitNames.shift()
         names.push({
           first_name: first,
           last_name: last
@@ -99,10 +120,10 @@ module.exports.parse = (nameString) => {
   }
 
   // Filter out names that have no first and last
-  names = names.filter((n) => n.first_name || n.last_name)
+  const nonEmptyNames = names.filter(hasNameParts)
 
   // Set name strings and remove duplicates
-  const namesArray = [...new Set(names.map((a) => (a.first_name ? `${a.first_name} ${a.last_name}` : a.last_name)))]
+  const namesArray = [...new Set(nonEmptyNames.map(formatName))]
 
   return {
     names: namesArray // Array of first last
