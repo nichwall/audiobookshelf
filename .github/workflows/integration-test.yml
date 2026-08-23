@@ -26,9 +26,6 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: install pkg (using yao-pkg fork for targeting node20)
-        run: npm install -g @yao-pkg/pkg
-
       - name: get client dependencies
         working-directory: client
         run: npm ci
@@ -38,10 +35,10 @@ jobs:
         run: npm run generate
 
       - name: get server dependencies and compile server
-        run: npm ci && npm run build:server && npm prune --omit=dev
+        run: npm ci && npm run build:server
 
       - name: build binary
-        run: pkg -t node20-linux-x64 -o audiobookshelf dist-server/index.js
+        run: npx --no-install pkg -t node20-linux-x64 -o audiobookshelf dist-server/index.js
 
       - name: run audiobookshelf
         run: |
