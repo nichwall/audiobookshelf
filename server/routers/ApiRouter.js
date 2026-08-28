@@ -20,7 +20,7 @@ const MeController = require('../controllers/MeController')
 const BackupController = require('../controllers/BackupController')
 const LibraryItemController = require('../controllers/LibraryItemController')
 const SeriesController = require('../controllers/SeriesController')
-const FileSystemController = require('../controllers/FileSystemController')
+const FileSystemController = require('../controllers/FileSystemController').default
 const AuthorController = require('../controllers/AuthorController')
 const SessionController = require('../controllers/SessionController')
 const PodcastController = require('../controllers/PodcastController')
@@ -208,8 +208,8 @@ class ApiRouter {
     //
     // File System Routes
     //
-    this.router.get('/filesystem', FileSystemController.getPaths.bind(this))
-    this.router.post('/filesystem/pathexists', FileSystemController.checkPathExists.bind(this))
+    this.router.get('/filesystem', FileSystemController.getPathsHandler.bind(FileSystemController))
+    this.router.post('/filesystem/pathexists', FileSystemController.checkPathExistsHandler.bind(FileSystemController))
 
     //
     // Author Routes
