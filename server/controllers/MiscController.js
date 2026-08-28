@@ -13,7 +13,7 @@ const { isObject, getTitleIgnorePrefix } = require('../utils/index')
 const { sanitizeFilename } = require('../utils/fileUtils')
 
 const TaskManager = require('../managers/TaskManager')
-const adminStats = require('../utils/queries/adminStats')
+const adminStats = require('../utils/queries/adminStats').default
 
 /**
  * @typedef RequestUserObject

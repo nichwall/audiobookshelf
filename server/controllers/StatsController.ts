@@ -1,12 +1,8 @@
 import type { NextFunction, Request, Response as ExpressResponse } from 'express'
 import { Get, Path, Response, Route, Security, SuccessResponse, Tags } from 'tsoa'
+import adminStats from '../utils/queries/adminStats'
 
 const Logger: { debug: (...args: unknown[]) => void; error: (...args: unknown[]) => void; warn: (...args: unknown[]) => void } = require('../Logger')
-const adminStats: {
-  getTotalSize: () => Promise<MediaSizeStats>
-  getNumAudioFiles: () => Promise<AudioFileStats>
-  getStatsForYear: (year: number) => Promise<YearStatsResponse>
-} = require('../utils/queries/adminStats')
 
 interface RequestUser {
   isAdminOrUp: boolean
@@ -18,18 +14,6 @@ type RequestWithUser = Request & { user: RequestUser }
 export interface SizeStats {
   totalSize: number
   numItems: number
-}
-
-interface MediaSizeStats {
-  books: SizeStats
-  podcasts: SizeStats
-  total: SizeStats
-}
-
-interface AudioFileStats {
-  numBookAudioFiles: number
-  numPodcastAudioFiles: number
-  numAudioFiles: number
 }
 
 export interface ServerStatsResponse {

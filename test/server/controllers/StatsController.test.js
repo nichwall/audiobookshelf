@@ -2,7 +2,7 @@ const { expect } = require('chai')
 const sinon = require('sinon')
 
 const Logger = require('../../../server/Logger')
-const adminStats = require('../../../server/utils/queries/adminStats')
+const adminStats = require('../../../server/utils/queries/adminStats').default
 const StatsController = require('../../../server/controllers/StatsController').default
 
 describe('StatsController', () => {
