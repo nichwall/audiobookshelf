@@ -6,6 +6,7 @@
   "main": "dist-server/index.js",
   "scripts": {
     "build:server": "node scripts/buildServer.js",
+    "generate:openapi": "tsoa spec -c tsoa.json",
     "dev": "nodemon --watch server --watch index.js --ext js,ts --exec \"npm run build:server && node dist-server/index.js\" -- --dev",
     "start": "node dist-server/index.js",
     "start-dev": "node dist-server/index.js --prod-with-dev-env",
@@ -61,12 +62,14 @@
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^20.17.0",
     "chai": "^4.3.10",
     "mocha": "^10.2.0",
     "nodemon": "^2.0.20",
     "nyc": "^15.1.0",
     "sinon": "^17.0.1",
+    "tsoa": "^7.0.0-alpha.0",
     "typescript": "^5.7.3"
   },
   "allowScripts": {

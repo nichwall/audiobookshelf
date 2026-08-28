@@ -1,0 +1,20 @@
+{
+  "controllerPathGlobs": [
+    "server/controllers/**/*.ts"
+  ],
+  "spec": {
+    "outputDirectory": "docs/generated",
+    "specFileBaseName": "openapi",
+    "specVersion": 3,
+    "name": "Audiobookshelf TypeScript API (tsoa experiment)",
+    "version": "2.36.0",
+    "description": "Experimental OpenAPI specification generated from TypeScript controllers.",
+    "basePath": "/api",
+    "securityDefinitions": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
