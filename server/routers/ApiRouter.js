@@ -33,7 +33,7 @@ const RSSFeedController = require('../controllers/RSSFeedController')
 const CustomMetadataProviderController = require('../controllers/CustomMetadataProviderController').default
 const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
-const StatsController = require('../controllers/StatsController')
+const StatsController = require('../controllers/StatsController').default
 const ApiKeyController = require('../controllers/ApiKeyController')
 
 class ApiRouter {
@@ -329,8 +329,8 @@ class ApiRouter {
     //
     // Stats Routes
     //
-    this.router.get('/stats/year/:year', StatsController.middleware.bind(this), StatsController.getAdminStatsForYear.bind(this))
-    this.router.get('/stats/server', StatsController.middleware.bind(this), StatsController.getServerStats.bind(this))
+    this.router.get('/stats/year/:year', StatsController.middleware.bind(StatsController), StatsController.getAdminStatsForYearHandler.bind(StatsController))
+    this.router.get('/stats/server', StatsController.middleware.bind(StatsController), StatsController.getServerStatsHandler.bind(StatsController))
 
     //
     // API Key Routes
