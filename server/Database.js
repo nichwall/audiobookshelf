@@ -147,7 +147,7 @@ class Database {
     return this.models.playbackSession
   }
 
-  /** @type {typeof import('./models/CustomMetadataProvider')} */
+  /** @type {typeof import('./models/CustomMetadataProvider').default} */
   get customMetadataProviderModel() {
     return this.models.customMetadataProvider
   }
@@ -343,7 +343,7 @@ class Database {
     require('./models/Feed').init(this.sequelize)
     require('./models/FeedEpisode').init(this.sequelize)
     require('./models/Setting').init(this.sequelize)
-    require('./models/CustomMetadataProvider').init(this.sequelize)
+    require('./models/CustomMetadataProvider').default.initialize(this.sequelize)
     require('./models/MediaItemShare').init(this.sequelize)
 
     return this.sequelize.sync({ force, alter: false })

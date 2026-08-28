@@ -30,7 +30,7 @@ const SearchController = require('../controllers/SearchController')
 const CacheController = require('../controllers/CacheController').default
 const ToolsController = require('../controllers/ToolsController')
 const RSSFeedController = require('../controllers/RSSFeedController')
-const CustomMetadataProviderController = require('../controllers/CustomMetadataProviderController')
+const CustomMetadataProviderController = require('../controllers/CustomMetadataProviderController').default
 const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
 const StatsController = require('../controllers/StatsController')
@@ -316,9 +316,9 @@ class ApiRouter {
     //
     // Custom Metadata Provider routes
     //
-    this.router.get('/custom-metadata-providers', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.getAll.bind(this))
-    this.router.post('/custom-metadata-providers', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.create.bind(this))
-    this.router.delete('/custom-metadata-providers/:id', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.delete.bind(this))
+    this.router.get('/custom-metadata-providers', CustomMetadataProviderController.middleware.bind(CustomMetadataProviderController), CustomMetadataProviderController.getAllHandler.bind(CustomMetadataProviderController))
+    this.router.post('/custom-metadata-providers', CustomMetadataProviderController.middleware.bind(CustomMetadataProviderController), CustomMetadataProviderController.createHandler.bind(CustomMetadataProviderController))
+    this.router.delete('/custom-metadata-providers/:id', CustomMetadataProviderController.middleware.bind(CustomMetadataProviderController), CustomMetadataProviderController.deleteHandler.bind(CustomMetadataProviderController))
 
     //
     // Share routes
