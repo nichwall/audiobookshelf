@@ -1,6 +1,6 @@
 const { rateLimit, RateLimitRequestHandler } = require('express-rate-limit')
+const proxyaddr = require('proxy-addr')
 const Logger = require('../Logger')
-const requestIp = require('../libs/requestIp')
 
 /**
  * Factory for creating authentication rate limiters
@@ -11,6 +11,40 @@ class RateLimiterFactory {
 
   constructor() {
     this.authRateLimiter = null
+  }
+
+  /**
+   * Return the address of the peer connected directly to this server. This
+   * must not use client-provided HTTP headers.
+   * @param {import('express').Request} req
+   * @returns {string}
+   */
+  getDirectPeerIp(req) {
+    return req.socket?.remoteAddress || req.connection?.remoteAddress || req.ip || 'unknown'
+  }
+
+  /**
+   * Build the address resolver used by authentication rate limiting.
+   *
+   * RATE_LIMIT_AUTH_TRUST_PROXY is a comma-separated proxy-addr allowlist of
+   * trusted reverse-proxy addresses, CIDRs, or named ranges. When it is unset,
+   * all client-supplied forwarding headers are deliberately ignored.
+   *
+   * @param {string|undefined} trustedProxies
+   * @returns {(req: import('express').Request) => string}
+   */
+  createRateLimitClientIpResolver(trustedProxies) {
+    const proxies = trustedProxies
+      ?.split(',')
+      .map((proxy) => proxy.trim())
+      .filter(Boolean)
+
+    if (!proxies?.length) {
+      return this.getDirectPeerIp
+    }
+
+    const trust = proxyaddr.compile(proxies)
+    return (req) => proxyaddr(req, trust) || this.getDirectPeerIp(req)
   }
 
   /**
@@ -50,20 +84,27 @@ class RateLimiterFactory {
       message = process.env.RATE_LIMIT_AUTH_MESSAGE
     }
 
+    let getClientIp
+    try {
+      getClientIp = this.createRateLimitClientIpResolver(process.env.RATE_LIMIT_AUTH_TRUST_PROXY)
+    } catch (error) {
+      Logger.error(`[RateLimiterFactory] Invalid RATE_LIMIT_AUTH_TRUST_PROXY: ${error.message}. Forwarded client IP headers will be ignored.`)
+      getClientIp = this.createRateLimitClientIpResolver()
+    }
+
     this.authRateLimiter = rateLimit({
       windowMs,
       max,
       standardHeaders: true,
       legacyHeaders: false,
       keyGenerator: (req) => {
-        // Override keyGenerator to handle proxy IPs
-        return requestIp.getClientIp(req) || req.ip
+        return getClientIp(req)
       },
       handler: (req, res) => {
         const userAgent = req.get('User-Agent') || 'Unknown'
         const endpoint = req.path
         const method = req.method
-        const ip = requestIp.getClientIp(req) || req.ip
+        const ip = getClientIp(req)
 
         Logger.warn(`[RateLimiter] Rate limit exceeded - IP: ${ip}, Endpoint: ${method} ${endpoint}, User-Agent: ${userAgent}`)
 
